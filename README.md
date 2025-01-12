@@ -33,6 +33,19 @@ uv pip install -e ".[dev]"
 uv run --with jupyter jupyter lab
 ```
 
+## Testing
+
+Run the tests with:
+```bash
+uv pip install -e ".[test]"
+uv run pytest
+```
+
+For coverage report:
+```bash
+uv run pytest --cov=altair_upset --cov-report=term-missing
+```
+
 ## Usage
 
 ```python

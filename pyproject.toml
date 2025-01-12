@@ -18,7 +18,15 @@ dev = [
     "jupyter",
     "ipykernel",
 ]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=altair_upset"
 
 [tool.uv]
-# Ensure package is treated as a Python package
 package = true 

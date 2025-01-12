@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "altair-upset"
+version = "0.1.0"
+description = "Create UpSet plots using Altair"
+readme = "README.md"
+requires-python = ">=3.6"
+license = {file = "LICENSE"}
+keywords = ["altair", "visualization", "upset", "vega-lite"]
+dependencies = [
+    "altair>=4.0.0",
+    "pandas>=1.0.0",
+] 

@@ -1,18 +1,58 @@
-# upset-altair-notebook [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/hms-dbmi/upset-altair-notebook/master?filepath=index.ipynb)
+# Altair UpSet
 
-Jupyter Notebooks for Altair-based Interactive UpSet Plots
+Create UpSet plots using Altair.
 
-## Development
-### Notebook
-Set up environments using Conda:
+## Installation
 
-```sh
-conda env create -f environment.yml
+With uv:
+```bash
+uv pip install altair-upset
 ```
 
-Start Jupyter with the Python kernel:
+With pip:
+```bash
+pip install altair-upset
+```
 
-```sh
-conda activate upset-altair-env
-jupyter notebook
+## Development
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/altair-upset.git
+cd altair-upset
+```
+
+2. Create a virtual environment and install dependencies:
+```bash
+uv venv
+uv pip install -e ".[dev]"
+```
+
+3. Start Jupyter for development:
+```bash
+uv run --with jupyter jupyter lab
+```
+
+## Usage
+
+```python
+import altair_upset as au
+import pandas as pd
+
+# Create sample data
+data = pd.DataFrame({
+    'set1': [1, 0, 1],
+    'set2': [1, 1, 0],
+    'set3': [0, 1, 1]
+})
+
+# Create UpSet plot
+chart = au.UpSetAltair(
+    data=data,
+    title="Sample UpSet Plot",
+    sets=["set1", "set2", "set3"]
+)
+
+# Display the chart
+chart.show()
 ```

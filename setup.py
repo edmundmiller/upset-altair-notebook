@@ -8,8 +8,8 @@ setup(
     author_email="your.email@example.com",
     packages=find_packages(),
     install_requires=[
-        "altair>=4.0.0",
+        "altair>=5.0.0",
         "pandas>=1.0.0"
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.8",
 ) 

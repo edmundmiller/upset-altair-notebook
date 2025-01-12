@@ -88,8 +88,8 @@ def UpSetAltair(
     degree_calculation = "+".join([f"(isDefined(datum['{s}']) ? datum['{s}'] : 0)" for s in sets])
     
     # Selections
-    legend_selection = alt.selection_multi(fields=["set"], bind="legend")
-    color_selection = alt.selection_single(fields=["intersection_id"], on="mouseover")
+    legend_selection = alt.Selection(type="multi", fields=["set"], bind="legend")
+    color_selection = alt.Selection(type="single", fields=["intersection_id"], on="mouseover")
     
     # Styles
     vertical_bar_chart_height = height * height_ratio
@@ -99,7 +99,11 @@ def UpSetAltair(
     vertical_bar_size = min(30, width / len(data["intersection_id"].unique().tolist()) - vertical_bar_padding)
     
     main_color = "#3A3A3A"
-    brush_color = alt.condition(~color_selection, alt.value(main_color), alt.value(highlight_color))
+    brush_color = alt.condition(
+        ~color_selection,
+        alt.value(main_color),
+        alt.value(highlight_color)
+    )
     
     is_show_horizontal_bar_label_bg = len(abbre[0]) <= 2
     horizontal_bar_label_bg_color = "white" if is_show_horizontal_bar_label_bg else "black"
@@ -117,10 +121,9 @@ def UpSetAltair(
     base = alt.Chart(data).transform_filter(
         legend_selection
     ).transform_pivot(
-        "set",
-        op="max",
-        groupby=["intersection_id", "count"],
-        value="is_intersect"
+        pivot="set",
+        value="is_intersect",
+        groupby=["intersection_id", "count"]
     ).transform_aggregate(
         count="sum(count)",
         groupby=sets
@@ -132,13 +135,14 @@ def UpSetAltair(
         intersection_id="row_number()",
         frame=[None, None]
     ).transform_fold(
-        sets, as_=["set", "is_intersect"]
+        fold=sets,
+        as_=["set", "is_intersect"]
     ).transform_lookup(
         lookup="set",
-        from_=alt.LookupData(set_to_abbre, "set", ["set_abbre"])
+        from_=alt.LookupData(data=set_to_abbre, key="set", fields=["set_abbre"])
     ).transform_lookup(
         lookup="set",
-        from_=alt.LookupData(set_to_order, "set", ["set_order"])
+        from_=alt.LookupData(data=set_to_order, key="set", fields=["set_order"])
     )
 
     # Vertical bar chart
@@ -232,9 +236,12 @@ def UpSetAltair(
         alt.hconcat(
             matrix_view,
             horizontal_bars
-        )
+        ),
+        spacing=20
     ).resolve_scale(
         y='shared'
+    ).add_selection(
+        legend_selection
     )
 
     # Apply configuration
@@ -243,10 +250,11 @@ def UpSetAltair(
     # Add title and subtitle
     if title:
         chart = chart.properties(
-            title={
-                "text": title,
-                "subtitle": subtitle if subtitle else None
-            }
+            title=alt.Title(
+                text=title,
+                subtitle=subtitle if subtitle else None,
+                anchor="start"
+            )
         )
 
     return chart
@@ -265,7 +273,6 @@ def _upset_top_level_configuration(
     ).configure_title(
         fontSize=18,
         fontWeight=400,
-        anchor="start",
         subtitlePadding=10
     ).configure_axis(
         labelFontSize=14,
@@ -281,7 +288,7 @@ def _upset_top_level_configuration(
         padding=20,
         orient=legend_orient,
         symbolType="circle",
-        symbolSize=legend_symbol_size,
+        symbolSize=legend_symbol_size
     ).configure_concat(
         spacing=0
     ) 

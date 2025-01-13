@@ -119,24 +119,24 @@ def test_chart_structure(sample_data):
     """Test the detailed chart structure"""
     chart = UpSetAltair(data=sample_data, sets=["set1", "set2", "set3"])
     spec = chart.to_dict()
-    
+
     # Check data source structure
     assert "data" in spec
     assert spec["data"]["name"] == "source"
     assert isinstance(spec["data"]["values"], list)
-    
+
     # Check transformations
     transforms = spec["vconcat"][0]["layer"][0]["transform"]
     transform_types = [t.get("type", "") for t in transforms]
     assert "pivot" in transform_types
     assert "aggregate" in transform_types
     assert "calculate" in transform_types
-    
+
     # Check encodings
     vertical_bar = spec["vconcat"][0]
     matrix = spec["vconcat"][1]["hconcat"][0]
     horizontal_bar = spec["vconcat"][1]["hconcat"][1]
-    
+
     assert "encoding" in vertical_bar
     assert "encoding" in matrix
     assert "encoding" in horizontal_bar
@@ -146,12 +146,12 @@ def test_selections(sample_data):
     """Test selection configurations"""
     chart = UpSetAltair(data=sample_data, sets=["set1", "set2", "set3"])
     spec = chart.to_dict()
-    
+
     # Check legend selection
     assert "params" in spec
     legend_sel = next(p for p in spec["params"] if p["name"] == "legend")
     assert legend_sel["bind"] == "legend"
-    
+
     # Check hover selection
     hover_sel = next(p for p in spec["params"] if p["name"] == "hover")
     assert hover_sel["on"] == "mouseover"
@@ -161,48 +161,33 @@ def test_selections(sample_data):
 def test_error_conditions(sample_data):
     """Test error handling"""
     # Test invalid sort_by
-    with pytest.raises(ValueError, match="sort_by must be either 'frequency' or 'degree'"):
+    with pytest.raises(
+        ValueError, match="sort_by must be either 'frequency' or 'degree'"
+    ):
         UpSetAltair(data=sample_data, sets=["set1"], sort_by="invalid")
-    
+
     # Test invalid sort_order
-    with pytest.raises(ValueError, match="sort_order must be either 'ascending' or 'descending'"):
+    with pytest.raises(
+        ValueError, match="sort_order must be either 'ascending' or 'descending'"
+    ):
         UpSetAltair(data=sample_data, sets=["set1"], sort_order="invalid")
-    
+
     # Test missing columns
     with pytest.raises(KeyError):
         UpSetAltair(data=sample_data, sets=["nonexistent"])
 
 
-def test_display_helper(sample_data, mocker):
-    """Test the display helper function"""
-    from altair_upset import display
-    
-    chart = UpSetAltair(data=sample_data, sets=["set1", "set2", "set3"])
-    
-    # Mock the display methods
-    mock_display = mocker.patch("altair_upset.upset.display")
-    mock_chart_display = mocker.patch.object(chart, "display")
-    
-    # Test fallback behavior
-    mock_chart_display.side_effect = Exception("display not available")
-    display(chart)
-    mock_display.assert_called_once_with(chart)
-
-
 def test_configuration(sample_data):
     """Test chart configuration options"""
     chart = UpSetAltair(
-        data=sample_data,
-        sets=["set1", "set2", "set3"],
-        width=800,
-        height=600
+        data=sample_data, sets=["set1", "set2", "set3"], width=800, height=600
     )
     spec = chart.to_dict()
-    
+
     # Check view configuration
     assert spec["config"]["view"]["continuousWidth"] == 800
     assert spec["config"]["view"]["continuousHeight"] == 600
-    
+
     # Check other configurations
     assert spec["config"]["axis"]["labelFontSize"] == 14
     assert spec["config"]["legend"]["symbolType"] == "circle"

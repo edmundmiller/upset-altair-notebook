@@ -79,22 +79,7 @@ def create_matrix_view(
     sort_by,
     sort_order,
 ):
-    """Create the matrix view component.
-    
-    Args:
-        base (alt.Chart): Base chart with transformations
-        dimensions (dict): Chart dimensions
-        color_selection (alt.Selection): Color selection
-        opacity_selection (alt.Selection): Opacity selection
-        glyph_size (int): Size of glyphs
-        line_connection_size (int): Size of connecting lines
-        vertical_bar_label_size (int): Label size
-        sort_by (str): Sort method
-        sort_order (str): Sort order
-    
-    Returns:
-        alt.Chart: Matrix view component
-    """
+    """Create the matrix view component."""
     main_color = "#3A3A3A"
     highlight_color = "#EA4667"
     brush_color = alt.condition(
@@ -110,6 +95,9 @@ def create_matrix_view(
         alt.Tooltip("max(count):Q", title="Cardinality"),
         alt.Tooltip("degree:Q", title="Degree"),
     ]
+
+    # Create a filtered view for intersecting sets only
+    intersection_base = base.transform_filter("datum.is_intersect == 1")
 
     return alt.layer(
         # Background rectangles for alternating rows
@@ -151,8 +139,8 @@ def create_matrix_view(
             y=alt.Y("set_order:N", title=None),
             text="set_abbre:N",
         ),
-        # Connection lines
-        base.mark_rule(color="#E6E6E6", size=line_connection_size).encode(
+        # Connection lines - only between intersecting dots
+        intersection_base.mark_rule(color="#E6E6E6", size=line_connection_size).encode(
             x=alt.X(
                 "intersection_id:N",
                 axis=alt.Axis(grid=False, labels=False, ticks=False),
@@ -160,17 +148,10 @@ def create_matrix_view(
             ),
             y=alt.Y("set_order:N", title=None),
             detail="intersection_id:N",
-            strokeWidth=alt.condition(
-                "datum.is_intersect == 1",
-                alt.value(line_connection_size),
-                alt.value(0),
-            ),
             opacity=alt.condition(opacity_selection, alt.value(1), alt.value(0.6)),
         ),
         # Intersection circles
-        base.mark_circle(size=glyph_size)
-        .transform_filter("datum.is_intersect == 1")
-        .encode(
+        intersection_base.mark_circle(size=glyph_size).encode(
             x=alt.X("intersection_id:N", sort=x_sort),
             y="set_order:N",
             color=brush_color,

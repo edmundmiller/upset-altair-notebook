@@ -220,12 +220,15 @@ def test_matrix_connection_lines():
         'value': [1, 2, 3, 4]
     })
     
-    chart = UpSetAltair(data=data)
+    chart = UpSetAltair(
+        data=data,
+        sets=['set1', 'set2', 'set3']
+    )
     chart_dict = chart.to_dict()
     
     # Find the matrix view layer in the chart
     matrix_view = None
-    for layer in chart_dict['vconcat'][1]['layer']:
+    for layer in chart_dict['vconcat'][1]['hconcat'][0]['layer']:
         if 'mark' in layer and layer['mark'].get('type') == 'rule':
             matrix_view = layer
             break

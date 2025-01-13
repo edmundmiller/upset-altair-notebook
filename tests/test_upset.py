@@ -231,23 +231,40 @@ def test_matrix_connection_lines():
     print(json.dumps(chart_dict['vconcat'][1]['hconcat'][0]['layer'], indent=2))
     
     # Find the matrix view layer in the chart that contains the rule mark
-    matrix_view = None
-    transforms = []
+    rule_layer = None
     for layer in chart_dict['vconcat'][1]['hconcat'][0]['layer']:
         if 'mark' in layer and isinstance(layer['mark'], dict) and layer['mark'].get('type') == 'rule':
-            matrix_view = layer
-            transforms = layer.get('transform', [])
+            rule_layer = layer
             break
     
-    assert matrix_view is not None, "Matrix view with connection lines not found"
+    assert rule_layer is not None, "Rule layer not found"
     
-    # Check if any transform contains the intersection filter
+    # Verify the rule mark properties
+    assert rule_layer['mark']['type'] == 'rule', "Mark should be a rule"
+    assert rule_layer['mark'].get('color') == '#E6E6E6', "Line color should be #E6E6E6"
+    
+    # Verify the encoding
+    encoding = rule_layer.get('encoding', {})
+    assert 'y' in encoding, "Should have y encoding"
+    assert 'y2' in encoding, "Should have y2 encoding for connecting dots"
+    assert encoding['y']['field'] == 'min_set_order', "Y encoding should use min_set_order"
+    assert encoding['y2']['field'] == 'max_set_order', "Y2 encoding should use max_set_order"
+    
+    # Verify the transform
+    transforms = rule_layer.get('transform', [])
     has_intersection_filter = False
+    has_min_max_transform = False
+    
     for transform in transforms:
         if 'filter' in transform:
             filter_expr = transform['filter']
             if isinstance(filter_expr, str) and 'datum.is_intersect == 1' in filter_expr:
                 has_intersection_filter = True
-                break
+        if 'aggregate' in transform:
+            aggs = transform['aggregate']
+            if any(agg['op'] == 'min' and agg['field'] == 'set_order' for agg in aggs) and \
+               any(agg['op'] == 'max' and agg['field'] == 'set_order' for agg in aggs):
+                has_min_max_transform = True
     
     assert has_intersection_filter, "Connection lines should only be drawn for intersecting sets"
+    assert has_min_max_transform, "Should aggregate min and max set_order for line connections"

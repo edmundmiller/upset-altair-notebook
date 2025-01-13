@@ -268,3 +268,76 @@ def test_matrix_connection_lines():
     
     assert has_intersection_filter, "Connection lines should only be drawn for intersecting sets"
     assert has_min_max_transform, "Should aggregate min and max set_order for line connections"
+
+
+def test_complex_chart_configuration():
+    """Test chart creation with complex configuration like in COVID symptoms example."""
+    # Create sample data with multiple symptoms
+    data = pd.DataFrame({
+        'Shortness of Breath': [1, 0, 1, 1, 0],
+        'Diarrhea': [1, 1, 0, 1, 0],
+        'Fever': [0, 1, 1, 1, 0],
+        'Cough': [0, 0, 1, 1, 1],
+        'Anosmia': [0, 0, 0, 1, 1],
+        'Fatigue': [0, 0, 0, 1, 1],
+        'value': [1, 2, 3, 4, 5]
+    })
+    
+    chart = UpSetAltair(
+        data=data,
+        title="Test Complex Configuration",
+        subtitle=["Line 1", "Line 2"],
+        sets=["Shortness of Breath", "Diarrhea", "Fever", "Cough", "Anosmia", "Fatigue"],
+        abbre=["B", "D", "Fe", "C", "A", "Fa"],
+        sort_by="degree",
+        sort_order="ascending",
+        width=900,
+        height=500,
+        height_ratio=0.65,
+        color_range=["#F0E442", "#E69F00", "#D55E00", "#CC79A7", "#0072B2", "#56B4E9"],
+        highlight_color="#777",
+        horizontal_bar_chart_width=200,
+        glyph_size=100,
+        set_label_bg_size=650,
+        line_connection_size=1,
+        horizontal_bar_size=16,
+        vertical_bar_label_size=12,
+        vertical_bar_padding=14,
+    )
+    
+    spec = chart.to_dict()
+    
+    # Check that width signals are not duplicated
+    def find_width_signals(obj):
+        signals = []
+        if isinstance(obj, dict):
+            if 'name' in obj and 'width' in obj['name']:
+                signals.append(obj['name'])
+            for value in obj.values():
+                signals.extend(find_width_signals(value))
+        elif isinstance(obj, list):
+            for item in obj:
+                signals.extend(find_width_signals(item))
+        return signals
+    
+    width_signals = find_width_signals(spec)
+    width_signal_counts = {}
+    for signal in width_signals:
+        width_signal_counts[signal] = width_signal_counts.get(signal, 0) + 1
+        assert width_signal_counts[signal] == 1, f"Duplicate width signal found: {signal}"
+    
+    # Verify the matrix view structure
+    matrix = spec["vconcat"][1]["hconcat"][0]
+    assert "layer" in matrix
+    assert len(matrix["layer"]) > 0
+    
+    # Check that the rule mark (connection lines) has the correct structure
+    rule_layer = None
+    for layer in matrix["layer"]:
+        if "mark" in layer and isinstance(layer["mark"], dict) and layer["mark"].get("type") == "rule":
+            rule_layer = layer
+            break
+    
+    assert rule_layer is not None, "Rule layer not found"
+    assert "y" in rule_layer["encoding"]
+    assert "y2" in rule_layer["encoding"]

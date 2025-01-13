@@ -202,6 +202,14 @@ def UpSetAltair(
                 ),
                 color=alt.value("#E6E6E6"),
             ),
+            # Set labels
+            base.mark_text(
+                align="right", baseline="middle", dx=-10, size=vertical_bar_label_size
+            ).encode(
+                x=alt.value(0),  # Place at the start
+                y=alt.Y("set_order:N", title=None),
+                text="set_abbre:N",  # Use abbreviated names
+            ),
             # Intersection circles
             base.mark_circle(size=glyph_size)
             .transform_filter("datum.is_intersect == 1")
@@ -209,6 +217,22 @@ def UpSetAltair(
                 x=alt.X("intersection_id:N", sort=x_sort),
                 y="set_order:N",
                 color=brush_color,
+                tooltip=tooltip,
+            ),
+            # Connection lines
+            base.mark_rule(color="#E6E6E6", size=line_connection_size).encode(
+                x=alt.X(
+                    "intersection_id:N",
+                    axis=alt.Axis(grid=False, labels=False, ticks=False),
+                    sort=x_sort,
+                ),
+                y=alt.Y("set_order:N", title=None),
+                detail="intersection_id:N",
+                strokeWidth=alt.condition(
+                    "datum.is_intersect == 1",
+                    alt.value(line_connection_size),
+                    alt.value(0),
+                ),
             ),
         )
         .properties(width=matrix_width, height=matrix_height)

@@ -5,11 +5,11 @@ from altair_upset import UpSetAltair
 # Create sample COVID variant data with more realistic intersections
 df = pd.DataFrame(
     {
-        "Alpha": [1, 1, 1, 0, 1, 0, 1, 0],
-        "Beta": [1, 0, 1, 1, 0, 1, 1, 0],
-        "Gamma": [0, 1, 1, 1, 0, 1, 1, 0],
-        "Delta": [0, 0, 1, 1, 1, 1, 1, 0],
-        "Omicron": [0, 0, 0, 1, 1, 1, 1, 1],
+        "Alpha": [1, 1, 1, 0, 1, 0, 1, 0],  # 5 occurrences
+        "Beta": [1, 0, 1, 1, 0, 1, 1, 0],  # 5 occurrences
+        "Gamma": [0, 1, 1, 1, 0, 1, 1, 0],  # 5 occurrences
+        "Delta": [0, 0, 1, 1, 1, 1, 1, 0],  # 5 occurrences
+        "Omicron": [0, 0, 0, 1, 1, 1, 1, 1],  # 5 occurrences
     }
 )
 
@@ -24,7 +24,7 @@ chart = UpSetAltair(
     sets=["Alpha", "Beta", "Gamma", "Delta", "Omicron"],
     abbre=["α", "β", "γ", "δ", "o"],  # Using Greek letters for better readability
     sort_by="frequency",
-    sort_order="ascending",
+    sort_order="descending",  # Show largest intersections first
     width=800,  # Adjusted for better display
     height=600,
     color_range=[

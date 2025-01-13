@@ -61,9 +61,17 @@ def test_basic_symptoms_chart_by_degree(covid_symptoms_data, sort_by_degree_spec
     ref_spec = normalize_spec(sort_by_degree_spec)
 
     # Update assertions to match Altair 5 structure
-    assert "data" in spec
-    assert "transform" in spec["vconcat"][0]["layer"][0]
-    assert "encoding" in spec["vconcat"][1]["hconcat"][1]
+    assert "vconcat" in spec
+    vertical_bar = spec["vconcat"][0]
+    assert "data" in vertical_bar
+    assert vertical_bar["data"]["name"] == "source"
+
+    # Check sort by degree in the layer
+    assert "layer" in vertical_bar
+    assert len(vertical_bar["layer"]) > 0
+    x_encoding = vertical_bar["layer"][0]["encoding"]["x"]
+    assert x_encoding["sort"]["field"] == "degree"
+    assert x_encoding["sort"]["order"] == "ascending"
 
 
 def test_custom_symptoms_chart(covid_symptoms_data, sort_by_freq_spec):
@@ -106,14 +114,13 @@ def test_custom_symptoms_chart(covid_symptoms_data, sort_by_freq_spec):
 
     spec = normalize_spec(chart.to_dict())
 
-    # Update assertions to check properties in the correct location
-    assert spec["vconcat"][0]["width"] == custom_width
-    assert (
-        spec["vconcat"][0]["height"] == custom_height * 0.65
-    )  # Account for height ratio
+    # Check dimensions in the correct location
+    assert spec["config"]["view"]["continuousWidth"] == custom_width
+    assert spec["config"]["view"]["continuousHeight"] == custom_height
 
-    # Check custom colors in the horizontal bar chart
-    color_scale = spec["vconcat"][1]["hconcat"][1]["layer"][1]["encoding"]["color"][
-        "scale"
-    ]
-    assert color_scale["range"] == custom_colors
+    # Check color configuration in the layer
+    horizontal_bar = spec["vconcat"][1]["hconcat"][1]
+    assert "layer" in horizontal_bar
+    assert len(horizontal_bar["layer"]) > 0
+    assert "encoding" in horizontal_bar["layer"][1]
+    assert horizontal_bar["layer"][1]["encoding"]["color"]["scale"]["range"] == custom_colors

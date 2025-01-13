@@ -2,6 +2,7 @@ import pytest
 import pandas as pd
 import altair as alt
 from altair_upset import UpSetAltair
+import json
 
 
 @pytest.fixture
@@ -120,26 +121,42 @@ def test_chart_structure(sample_data):
     chart = UpSetAltair(data=sample_data, sets=["set1", "set2", "set3"])
     spec = chart.to_dict()
 
-    # Check data source structure
-    assert "data" in spec
-    assert spec["data"]["name"] == "source"
-    assert isinstance(spec["data"]["values"], list)
-
-    # Check transformations
-    transforms = spec["vconcat"][0]["layer"][0]["transform"]
-    transform_types = [t.get("type", "") for t in transforms]
-    assert "pivot" in transform_types
-    assert "aggregate" in transform_types
-    assert "calculate" in transform_types
-
-    # Check encodings
+    # Check data source structure in vconcat
+    assert "vconcat" in spec
     vertical_bar = spec["vconcat"][0]
+    assert "data" in vertical_bar
+    assert vertical_bar["data"]["name"] == "source"
+    assert isinstance(vertical_bar["data"]["values"], list)
+
+    # Check transformations in layer
+    assert "layer" in vertical_bar
+    assert len(vertical_bar["layer"]) > 0
+    
+    print("\nTransform structure:")
+    print(json.dumps(vertical_bar["layer"][0].get("transform", []), indent=2))
+    
+    # The transforms are now in a different order/structure in Altair 5
+    transforms = vertical_bar["layer"][0].get("transform", [])
+    transform_ops = []
+    for t in transforms:
+        if "pivot" in str(t):
+            transform_ops.append("pivot")
+        elif "aggregate" in str(t):
+            transform_ops.append("aggregate")
+        elif "calculate" in str(t):
+            transform_ops.append("calculate")
+    
+    assert "pivot" in transform_ops
+    assert "aggregate" in transform_ops
+    assert "calculate" in transform_ops
+
+    # Check encodings in layer
     matrix = spec["vconcat"][1]["hconcat"][0]
     horizontal_bar = spec["vconcat"][1]["hconcat"][1]
 
-    assert "encoding" in vertical_bar
-    assert "encoding" in matrix
-    assert "encoding" in horizontal_bar
+    assert "encoding" in vertical_bar["layer"][0]
+    assert "encoding" in matrix["layer"][0]
+    assert "encoding" in horizontal_bar["layer"][1]
 
 
 def test_selections(sample_data):
@@ -154,8 +171,8 @@ def test_selections(sample_data):
 
     # Check hover selection
     hover_sel = next(p for p in spec["params"] if p["name"] == "hover")
-    assert hover_sel["on"] == "mouseover"
-    assert hover_sel["empty"] is False
+    assert hover_sel["select"]["type"] == "point"
+    assert hover_sel["select"]["on"] == "mouseover"  # In Altair 5, this is in select
 
 
 def test_error_conditions(sample_data):

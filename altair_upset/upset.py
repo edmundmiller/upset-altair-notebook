@@ -52,7 +52,16 @@ def UpSetAltair(
         altair.vegalite.v4.api.VConcatChart: An Altair chart object
     """
     if (data is None) or (sets is None):
-        raise ValueError("No data and/or a list of sets are provided")
+        raise ValueError(
+            "Both data and sets parameters are required. "
+            "Please provide a pandas DataFrame and a list of set names."
+        )
+
+    if not isinstance(data, pd.DataFrame):
+        raise TypeError(f"data must be a pandas DataFrame, got {type(data)}")
+
+    if not isinstance(sets, list):
+        raise TypeError(f"sets must be a list of column names, got {type(sets)}")
 
     if (height_ratio < 0) or (1 < height_ratio):
         height_ratio = 0.5
@@ -117,9 +126,7 @@ def UpSetAltair(
 
     main_color = "#3A3A3A"
     brush_color = alt.condition(
-        "!hover.intersection_id || hover.intersection_id === datum.intersection_id",
-        alt.value(main_color),
-        alt.value(highlight_color),
+        color_selection, alt.value(main_color), alt.value(highlight_color)
     )
 
     is_show_horizontal_bar_label_bg = len(abbre[0]) <= 2
@@ -274,7 +281,16 @@ def UpSetAltair(
     )
 
     # Horizontal bar chart
-    horizontal_bars = (
+    horizontal_bar_label = base.mark_text(
+        align="right", baseline="middle", dx=-10, size=vertical_bar_label_size
+    ).encode(
+        x=alt.value(0),
+        y=alt.Y("set_order:N", title=None),
+        text="set_abbre:N",
+    )
+
+    horizontal_bars = alt.layer(
+        horizontal_bar_label,
         base.mark_bar(size=horizontal_bar_size)
         .transform_filter("datum.is_intersect == 1")
         .encode(
@@ -289,9 +305,8 @@ def UpSetAltair(
             color=alt.Color(
                 "set:N", scale=alt.Scale(domain=sets, range=color_range), legend=None
             ),
-        )
-        .properties(width=horizontal_bar_chart_width)
-    )
+        ),
+    ).properties(width=horizontal_bar_chart_width)
 
     # Combine all views
     chart = (
@@ -325,7 +340,14 @@ def _upset_top_level_configuration(
     """
     return (
         base.configure_view(stroke=None)
-        .configure_title(fontSize=18, fontWeight=400, subtitlePadding=10)
+        .configure_title(
+            fontSize=20,
+            fontWeight=500,
+            anchor="start",
+            subtitleColor="#3A3A3A",
+            subtitleFontSize=14,
+            subtitlePadding=10,
+        )
         .configure_axis(
             labelFontSize=14,
             labelFontWeight=300,
@@ -345,3 +367,11 @@ def _upset_top_level_configuration(
         )
         .configure_concat(spacing=0)
     )
+
+
+def display(chart):
+    """Helper method to display the chart directly."""
+    try:
+        chart.display()
+    except:
+        display(chart)  # For Jupyter environments

@@ -88,15 +88,17 @@ def UpSetAltair(
     degree_calculation = "+".join([f"(isDefined(datum['{s}']) ? datum['{s}'] : 0)" for s in sets])
     
     # Selections
-    legend_selection = alt.selection_interval(
+    legend_selection = alt.selection_multi(
         name="legend",
         bind="legend",
         fields=["set"]
     )
+    
     color_selection = alt.selection_single(
         name="hover",
         fields=["intersection_id"],
-        on="mouseover"
+        on="mouseover",
+        empty="none"  # Keep previous selection when moving away
     )
     
     # Styles

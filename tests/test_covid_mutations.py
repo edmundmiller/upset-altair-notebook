@@ -2,7 +2,6 @@ import pytest
 import pandas as pd
 import json
 import re
-from urllib.request import urlopen
 from altair_upset import UpSetAltair
 
 @pytest.fixture
@@ -22,7 +21,20 @@ def covid_mutations_data():
     })
     return df
 
-def test_full_mutations_chart(covid_mutations_data):
+@pytest.fixture
+def mutations_spec():
+    """Load the mutations reference specification"""
+    with open('tests/test_data/covid_variants_upset.json') as f:
+        return json.load(f)
+
+def normalize_spec(spec):
+    """Normalize specification for comparison by removing variable elements"""
+    json_str = json.dumps(spec)
+    json_str = re.sub(r'selector\d+', 'selectorXXX', json_str)
+    json_str = re.sub(r'"schema": ".*"', '"schema": "<removed>"', json_str)
+    return json.loads(json_str)
+
+def test_full_mutations_chart(covid_mutations_data, mutations_spec):
     """Test the full COVID mutations chart with all variants"""
     chart = UpSetAltair(
         data=covid_mutations_data,
@@ -45,16 +57,22 @@ def test_full_mutations_chart(covid_mutations_data):
         set_label_bg_size=650,
     )
     
-    spec = chart.to_dict()
+    spec = normalize_spec(chart.to_dict())
+    ref_spec = normalize_spec(mutations_spec)
     
-    # Check number of sets
-    assert len(spec['vconcat'][1]['hconcat'][1]['encoding']['color']['scale']['domain']) == 10
+    # Check data structure matches reference
+    assert spec['data'] == ref_spec['data']
     
-    # Check color scheme
-    assert len(spec['vconcat'][1]['hconcat'][1]['encoding']['color']['scale']['range']) == 10
+    # Check transforms match reference
+    assert spec['vconcat'][0]['layer'][0]['transform'] == ref_spec['data'][3]['transform']
+    
+    # Check encoding structure
+    assert spec['vconcat'][1]['hconcat'][1]['encoding'] == ref_spec['vconcat'][1]['hconcat'][1]['encoding']
 
 def test_subset_mutations_chart(covid_mutations_data):
     """Test the COVID mutations chart with subset of variants"""
+    subset_sets = ["Alpha", "Beta", "Gamma", "Delta", "Omicron"]
+    
     chart = UpSetAltair(
         data=covid_mutations_data,
         title="Shared Mutations of COVID Variants",
@@ -62,18 +80,19 @@ def test_subset_mutations_chart(covid_mutations_data):
             "Story & Data: https://covariants.org/shared-mutations",
             "Altair-based UpSet Plot: https://github.com/hms-dbmi/upset-altair-notebook",
         ],
-        sets=["Alpha", "Beta", "Gamma", "Delta", "Omicron"],
+        sets=subset_sets,
         abbre=["Al", "Be", "Ga", "De", "Om"],
         sort_by="frequency",
         sort_order="ascending",
     )
     
-    spec = chart.to_dict()
+    spec = normalize_spec(chart.to_dict())
     
-    # Check number of sets
-    assert len(spec['vconcat'][1]['hconcat'][1]['encoding']['color']['scale']['domain']) == 5
+    # Check set configuration
+    color_scale = spec['vconcat'][1]['hconcat'][1]['encoding']['color']['scale']
+    assert color_scale['domain'] == subset_sets
     
-    # Check set names
-    expected_sets = ["Alpha", "Beta", "Gamma", "Delta", "Omicron"]
-    actual_sets = spec['vconcat'][1]['hconcat'][1]['encoding']['color']['scale']['domain']
-    assert actual_sets == expected_sets 
+    # Check transforms handle subset correctly
+    transforms = spec['vconcat'][0]['layer'][0]['transform']
+    fold_transform = next(t for t in transforms if 'fold' in t)
+    assert fold_transform['fields'] == subset_sets 

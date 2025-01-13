@@ -1,6 +1,7 @@
 import pytest
 import pandas as pd
 import json
+import re
 from altair_upset import UpSetAltair
 
 @pytest.fixture
@@ -9,13 +10,28 @@ def covid_symptoms_data():
     return pd.read_csv("https://ndownloader.figshare.com/files/22339791")
 
 @pytest.fixture
-def reference_spec():
-    """Load the reference specification"""
+def sort_by_degree_spec():
+    """Load the sort by degree reference specification"""
     with open('tests/test_data/sort_by_degree_covid_symptoms.json') as f:
         return json.load(f)
 
-def test_basic_symptoms_chart(covid_symptoms_data, reference_spec):
-    """Test Example 1 from the documentation"""
+@pytest.fixture
+def sort_by_freq_spec():
+    """Load the sort by frequency reference specification"""
+    with open('tests/test_data/sort_by_freq_covid_symptoms.json') as f:
+        return json.load(f)
+
+def normalize_spec(spec):
+    """Normalize specification for comparison by removing variable elements"""
+    json_str = json.dumps(spec)
+    # Replace selector names which can vary
+    json_str = re.sub(r'selector\d+', 'selectorXXX', json_str)
+    # Remove schema URL which can change with Altair versions
+    json_str = re.sub(r'"schema": ".*"', '"schema": "<removed>"', json_str)
+    return json.loads(json_str)
+
+def test_basic_symptoms_chart_by_degree(covid_symptoms_data, sort_by_degree_spec):
+    """Test Example 1 from the documentation with sort by degree"""
     chart = UpSetAltair(
         data=covid_symptoms_data,
         title="Symptoms Reported by Users of the COVID Symptom Tracker App",
@@ -29,19 +45,24 @@ def test_basic_symptoms_chart(covid_symptoms_data, reference_spec):
         sort_order="ascending",
     )
     
-    spec = chart.to_dict()
+    spec = normalize_spec(chart.to_dict())
+    ref_spec = normalize_spec(sort_by_degree_spec)
     
-    # Check against reference
-    assert spec['title']['text'] == reference_spec['title']['text']
-    assert spec['title']['subtitle'] == reference_spec['title']['subtitle']
+    # Check data structure matches reference
+    assert spec['data'] == ref_spec['data']
     
-    # Check data transformations
-    transforms = spec['vconcat'][0]['layer'][0]['transform']
-    ref_transforms = reference_spec['data'][3]['transform']
-    assert len(transforms) == len(ref_transforms)
+    # Check transforms match reference
+    assert spec['vconcat'][0]['layer'][0]['transform'] == ref_spec['data'][3]['transform']
+    
+    # Check encoding structure
+    assert spec['vconcat'][1]['hconcat'][1]['encoding'] == ref_spec['vconcat'][1]['hconcat'][1]['encoding']
 
-def test_custom_symptoms_chart(covid_symptoms_data):
+def test_custom_symptoms_chart(covid_symptoms_data, sort_by_freq_spec):
     """Test Example 2 with custom options"""
+    custom_width = 900
+    custom_height = 500
+    custom_colors = ["#F0E442", "#E69F00", "#D55E00", "#CC79A7", "#0072B2", "#56B4E9"]
+    
     chart = UpSetAltair(
         data=covid_symptoms_data,
         title="Symptoms Reported by Users of the COVID Symptom Tracker App",
@@ -51,12 +72,12 @@ def test_custom_symptoms_chart(covid_symptoms_data):
         ],
         sets=["Shortness of Breath", "Diarrhea", "Fever", "Cough", "Anosmia", "Fatigue"],
         abbre=["B", "D", "Fe", "C", "A", "Fa"],
-        sort_by="degree",
+        sort_by="frequency",  # Test against frequency sorted reference
         sort_order="ascending",
-        width=900,
-        height=500,
+        width=custom_width,
+        height=custom_height,
         height_ratio=0.65,
-        color_range=["#F0E442", "#E69F00", "#D55E00", "#CC79A7", "#0072B2", "#56B4E9"],
+        color_range=custom_colors,
         highlight_color="#777",
         horizontal_bar_chart_width=200,
         glyph_size=100,
@@ -67,12 +88,16 @@ def test_custom_symptoms_chart(covid_symptoms_data):
         vertical_bar_padding=14,
     )
     
-    spec = chart.to_dict()
+    spec = normalize_spec(chart.to_dict())
+    ref_spec = normalize_spec(sort_by_freq_spec)
     
     # Check custom dimensions
-    assert spec['width'] == 900
-    assert spec['height'] == 500
+    assert spec['width'] == custom_width
+    assert spec['height'] == custom_height
+    
+    # Check transforms match frequency-sorted reference
+    assert spec['vconcat'][0]['layer'][0]['transform'] == ref_spec['data'][3]['transform']
     
     # Check custom colors
     color_scale = spec['vconcat'][1]['hconcat'][1]['encoding']['color']['scale']
-    assert color_scale['range'] == ["#F0E442", "#E69F00", "#D55E00", "#CC79A7", "#0072B2", "#56B4E9"] 
+    assert color_scale['range'] == custom_colors 

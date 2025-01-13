@@ -88,17 +88,17 @@ def UpSetAltair(
     degree_calculation = "+".join([f"(isDefined(datum['{s}']) ? datum['{s}'] : 0)" for s in sets])
     
     # Selections
-    legend_selection = alt.selection_multi(
+    legend_selection = alt.selection_point(
         name="legend",
         bind="legend",
         fields=["set"]
     )
     
-    color_selection = alt.selection_single(
+    color_selection = alt.selection_point(
         name="hover",
         fields=["intersection_id"],
         on="mouseover",
-        empty="none"  # Keep previous selection when moving away
+        empty=False  # Changed from "none" to False to keep previous selection when moving away
     )
     
     # Styles
@@ -183,7 +183,7 @@ def UpSetAltair(
         text=alt.Text("count:Q", format=".0f")
     )
 
-    vertical_bar_chart = (vertical_bar + vertical_bar_text).add_selection(
+    vertical_bar_chart = (vertical_bar + vertical_bar_text).add_params(
         color_selection
     )
 
@@ -215,7 +215,9 @@ def UpSetAltair(
     ).properties(
         width=matrix_width,
         height=matrix_height
-    ).add_selection(color_selection)
+    ).add_params(
+        color_selection
+    )
 
     # Horizontal bar chart
     horizontal_bars = base.mark_bar(size=horizontal_bar_size).transform_filter(

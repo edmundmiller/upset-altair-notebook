@@ -36,5 +36,4 @@ chart = UpSetAltair(
     ],  # Color-blind friendly palette
 )
 
-# Save the chart
-chart.save("covid_variants_upset.html")
+chart.display()

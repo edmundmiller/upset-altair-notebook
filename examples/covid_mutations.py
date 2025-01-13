@@ -2,7 +2,7 @@ import json
 from urllib.request import urlopen
 import re
 import pandas as pd
-from altair_upset.upset import UpSetAltair
+from altair_upset import UpSetAltair
 
 # Retreived on Nov 30, 2021
 res = urlopen(

@@ -226,16 +226,28 @@ def test_matrix_connection_lines():
     )
     chart_dict = chart.to_dict()
     
-    # Find the matrix view layer in the chart
+    # Print the structure to debug
+    print("\nChart structure:")
+    print(json.dumps(chart_dict['vconcat'][1]['hconcat'][0]['layer'], indent=2))
+    
+    # Find the matrix view layer in the chart that contains the rule mark
     matrix_view = None
+    transforms = []
     for layer in chart_dict['vconcat'][1]['hconcat'][0]['layer']:
-        if 'mark' in layer and layer['mark'].get('type') == 'rule':
+        if 'mark' in layer and isinstance(layer['mark'], dict) and layer['mark'].get('type') == 'rule':
             matrix_view = layer
+            transforms = layer.get('transform', [])
             break
     
     assert matrix_view is not None, "Matrix view with connection lines not found"
     
-    # Verify that connection lines only appear for intersecting sets
-    transform_filter = matrix_view.get('transform', [{}])[0].get('filter', '')
-    assert 'datum.is_intersect == 1' in transform_filter, \
-        "Connection lines should only be drawn for intersecting sets"
+    # Check if any transform contains the intersection filter
+    has_intersection_filter = False
+    for transform in transforms:
+        if 'filter' in transform:
+            filter_expr = transform['filter']
+            if isinstance(filter_expr, str) and 'datum.is_intersect == 1' in filter_expr:
+                has_intersection_filter = True
+                break
+    
+    assert has_intersection_filter, "Connection lines should only be drawn for intersecting sets"

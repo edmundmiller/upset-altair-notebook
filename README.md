@@ -37,7 +37,7 @@ uv run --with jupyter jupyter lab
 
 Run the tests with:
 ```bash
-uv pip install -e ".[test]"
+uv install -e ".[test]"
 uv run pytest
 ```
 

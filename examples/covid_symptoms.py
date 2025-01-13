@@ -1,6 +1,6 @@
 import pandas as pd
 
-from altair_upset.upset import UpSetAltair
+from altair_upset import UpSetAltair
 
 df = pd.read_csv("https://ndownloader.figshare.com/files/22339791")
 

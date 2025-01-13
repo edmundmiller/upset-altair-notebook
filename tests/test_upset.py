@@ -208,3 +208,31 @@ def test_configuration(sample_data):
     # Check other configurations
     assert spec["config"]["axis"]["labelFontSize"] == 14
     assert spec["config"]["legend"]["symbolType"] == "circle"
+
+
+def test_matrix_connection_lines():
+    """Test that connection lines only appear between intersecting dots."""
+    # Create a simple dataset with known intersections
+    data = pd.DataFrame({
+        'set1': [1, 1, 0, 0],
+        'set2': [1, 0, 1, 0],
+        'set3': [1, 0, 0, 1],
+        'value': [1, 2, 3, 4]
+    })
+    
+    chart = UpSetAltair(data=data)
+    chart_dict = chart.to_dict()
+    
+    # Find the matrix view layer in the chart
+    matrix_view = None
+    for layer in chart_dict['vconcat'][1]['layer']:
+        if 'mark' in layer and layer['mark'].get('type') == 'rule':
+            matrix_view = layer
+            break
+    
+    assert matrix_view is not None, "Matrix view with connection lines not found"
+    
+    # Verify that connection lines only appear for intersecting sets
+    transform_filter = matrix_view.get('transform', [{}])[0].get('filter', '')
+    assert 'datum.is_intersect == 1' in transform_filter, \
+        "Connection lines should only be drawn for intersecting sets"

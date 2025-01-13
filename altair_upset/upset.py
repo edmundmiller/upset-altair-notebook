@@ -147,12 +147,9 @@ def UpSetAltair(
 
     # Update base chart with proper transformations
     base = (
-        alt.Chart(data)
+        alt.Chart(alt.Data(values=data.to_dict("records"), name="source"))
         .transform_filter(legend_selection)
         .transform_pivot(
-            # Right before this operation, columns should be:
-            # `count`, `set`, `is_intersect`, (`intersection_id`, `degree`, `set_order`, `set_abbre`)
-            # where (fields with brackets) should be dropped and recalculated later.
             "set",
             op="max",
             groupby=["intersection_id", "count"],
@@ -175,12 +172,6 @@ def UpSetAltair(
         .transform_lookup(
             lookup="set", from_=alt.LookupData(set_to_order, "set", ["set_order"])
         )
-        .transform_window(
-            # This was missing - it ensures proper set ordering
-            set_order="distinct(set)",
-            frame=[None, 0],
-            sort=[{"field": "set_order"}],
-        )
     )
 
     # Vertical bar chart
@@ -201,7 +192,7 @@ def UpSetAltair(
             color=brush_color,
             tooltip=tooltip,
         )
-        .properties(width=matrix_width, height=vertical_bar_chart_height)
+        .properties(width=width, height=vertical_bar_chart_height)
     )
 
     vertical_bar_text = vertical_bar.mark_text(
@@ -276,26 +267,19 @@ def UpSetAltair(
                 opacity=alt.condition(opacity_selection, alt.value(1), alt.value(0.6)),
             ),
         )
-        .properties(width=matrix_width, height=matrix_height)
+        .properties(width=width, height=matrix_height)
         .add_params(color_selection, opacity_selection)
     )
 
-    # Horizontal bar chart
-    horizontal_bar_label = base.mark_text(
-        align="right", baseline="middle", dx=-10, size=vertical_bar_label_size
-    ).encode(
-        x=alt.value(0),
-        y=alt.Y("set_order:N", title=None),
-        text="set_abbre:N",
-    )
-
-    horizontal_bars = alt.layer(
-        horizontal_bar_label,
+    # Update horizontal bars
+    horizontal_bars = (
         base.mark_bar(size=horizontal_bar_size)
         .transform_filter("datum.is_intersect == 1")
         .encode(
             x=alt.X(
-                "sum(count):Q", axis=alt.Axis(grid=False, tickCount=3), title="Set Size"
+                "sum(count):Q",
+                axis=alt.Axis(grid=False, tickCount=3),
+                title="Set Size",
             ),
             y=alt.Y(
                 "set_order:N",
@@ -303,22 +287,39 @@ def UpSetAltair(
                 title=None,
             ),
             color=alt.Color(
-                "set:N", scale=alt.Scale(domain=sets, range=color_range), legend=None
+                "set:N",
+                scale=alt.Scale(domain=sets, range=color_range),
+                legend=None,
             ),
-        ),
-    ).properties(width=horizontal_bar_chart_width)
+        )
+    )
 
-    # Combine all views
+    horizontal_bar_labels = base.mark_text(
+        align="right", baseline="middle", dx=-10, size=vertical_bar_label_size
+    ).encode(
+        x=alt.value(0),
+        y=alt.Y("set_order:N", title=None),
+        text="set_abbre:N",
+    )
+
+    horizontal_bar_chart = alt.layer(horizontal_bar_labels, horizontal_bars).properties(
+        width=horizontal_bar_chart_width
+    )
+
+    # Update chart composition
     chart = (
         alt.vconcat(
-            vertical_bar_chart, alt.hconcat(matrix_view, horizontal_bars), spacing=20
+            vertical_bar_chart,
+            alt.hconcat(matrix_view, horizontal_bar_chart),
+            spacing=20,
         )
         .resolve_scale(y="shared")
         .add_params(legend_selection)
+        .properties(autosize={"type": "fit", "contains": "padding"})
     )
 
     # Apply configuration
-    chart = _upset_top_level_configuration(chart)
+    chart = _upset_top_level_configuration(chart, width, height)
 
     # Add title and subtitle
     if title:
@@ -332,14 +333,11 @@ def UpSetAltair(
 
 
 def _upset_top_level_configuration(
-    base, legend_orient="top-left", legend_symbol_size=30
+    base, width, height, legend_orient="top-left", legend_symbol_size=30
 ):
-    """Configure the top level properties of the UpSet plot.
-
-    Internal helper function.
-    """
+    """Configure the top level properties of the UpSet plot."""
     return (
-        base.configure_view(stroke=None)
+        base.configure_view(stroke=None, continuousWidth=width, continuousHeight=height)
         .configure_title(
             fontSize=20,
             fontWeight=500,
@@ -366,6 +364,7 @@ def _upset_top_level_configuration(
             symbolSize=legend_symbol_size,
         )
         .configure_concat(spacing=0)
+        .properties(autosize={"type": "fit", "contains": "padding"})
     )
 
 

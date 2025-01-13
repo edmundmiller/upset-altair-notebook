@@ -13,15 +13,15 @@ res = urlopen(
 content = res.read().decode()
 
 # Extract the JSON part (everything between the first { and last })
-json_str = re.search(r'\{.*\}', content, re.DOTALL).group()
+json_str = re.search(r"\{.*\}", content, re.DOTALL).group()
 
 # Clean up the JSON string
 # Remove Python-style comments
-json_str = re.sub(r'#.*$', '', json_str, flags=re.MULTILINE)
+json_str = re.sub(r"#.*$", "", json_str, flags=re.MULTILINE)
 # Ensure property names are double-quoted
-json_str = re.sub(r'(\w+):', r'"\1":', json_str)
+json_str = re.sub(r"(\w+):", r'"\1":', json_str)
 # Remove trailing commas
-json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+json_str = re.sub(r",(\s*[}\]])", r"\1", json_str)
 
 try:
     json_data = json.loads(json_str)
@@ -34,7 +34,7 @@ except json.JSONDecodeError as e:
 # Restructure and get unique mutations
 unique_mutations = set()
 for name in json_data:
-    mutations = json_data[name]['nonsynonymous']
+    mutations = json_data[name]["nonsynonymous"]
     json_data[name] = mutations
     unique_mutations.update(mutations)
 

@@ -63,6 +63,12 @@ def UpSetAltair(
     if not isinstance(sets, list):
         raise TypeError(f"sets must be a list of column names, got {type(sets)}")
 
+    if sort_by not in ["frequency", "degree"]:
+        raise ValueError("sort_by must be either 'frequency' or 'degree'")
+
+    if sort_order not in ["ascending", "descending"]:
+        raise ValueError("sort_order must be either 'ascending' or 'descending'")
+
     if (height_ratio < 0) or (1 < height_ratio):
         height_ratio = 0.5
         print("height_ratio set to 0.5")
@@ -372,5 +378,6 @@ def display(chart):
     """Helper method to display the chart directly."""
     try:
         chart.display()
-    except:
-        display(chart)  # For Jupyter environments
+    except Exception:  # Be explicit about catching exceptions
+        from IPython.display import display as ipython_display
+        ipython_display(chart)  # For Jupyter environments

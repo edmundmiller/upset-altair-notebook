@@ -8,12 +8,15 @@ version = "0.1.0"
 description = "Create UpSet plots using Altair"
 readme = "README.md"
 requires-python = ">=3.8"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
 dependencies = [
     "altair>=5.0.0",
     "pandas>=1.0.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "jupyter",
     "ipykernel",
@@ -30,3 +33,4 @@ addopts = "--cov=altair_upset"
 
 [tool.uv]
 package = true 
+default-groups = ["dev", "test"]

@@ -4,14 +4,8 @@ Create UpSet plots using Altair.
 
 ## Installation
 
-With uv:
 ```bash
-uv pip install altair-upset
-```
-
-With pip:
-```bash
-pip install altair-upset
+uv install altair-upset
 ```
 
 ## Development
@@ -25,12 +19,12 @@ cd altair-upset
 2. Create a virtual environment and install dependencies:
 ```bash
 uv venv
-uv pip install -e ".[dev]"
+uv install -e ".[dev]"
 ```
 
 3. Start Jupyter for development:
 ```bash
-uv run --with jupyter jupyter lab
+uv run jupyter lab
 ```
 
 ## Testing

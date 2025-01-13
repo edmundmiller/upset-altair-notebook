@@ -135,25 +135,44 @@ def UpSetAltair(
         alt.Tooltip("degree:Q", title="Degree"),
     ]
 
-    # Base chart configuration
+    # Add opacity selection that was missing
+    opacity_selection = alt.selection_point(name="opacity", fields=["intersection_id"])
+
+    # Update base chart with proper transformations
     base = (
         alt.Chart(data)
-        .transform_filter("legend.set === null || legend.set === datum.set")
+        .transform_filter(legend_selection)
         .transform_pivot(
-            pivot="set", value="is_intersect", groupby=["intersection_id", "count"]
+            # Right before this operation, columns should be:
+            # `count`, `set`, `is_intersect`, (`intersection_id`, `degree`, `set_order`, `set_abbre`)
+            # where (fields with brackets) should be dropped and recalculated later.
+            "set",
+            op="max",
+            groupby=["intersection_id", "count"],
+            value="is_intersect",
         )
-        .transform_aggregate(count="sum(count)", groupby=sets)
+        .transform_aggregate(
+            count="sum(count)",
+            groupby=sets,
+        )
         .transform_calculate(degree=degree_calculation)
         .transform_filter("datum.degree != 0")
-        .transform_window(intersection_id="row_number()", frame=[None, None])
-        .transform_fold(fold=sets, as_=["set", "is_intersect"])
+        .transform_window(
+            intersection_id="row_number()",
+            frame=[None, None],
+        )
+        .transform_fold(sets, as_=["set", "is_intersect"])
         .transform_lookup(
-            lookup="set",
-            from_=alt.LookupData(data=set_to_abbre, key="set", fields=["set_abbre"]),
+            lookup="set", from_=alt.LookupData(set_to_abbre, "set", ["set_abbre"])
         )
         .transform_lookup(
-            lookup="set",
-            from_=alt.LookupData(data=set_to_order, key="set", fields=["set_order"]),
+            lookup="set", from_=alt.LookupData(set_to_order, "set", ["set_order"])
+        )
+        .transform_window(
+            # This was missing - it ensures proper set ordering
+            set_order="distinct(set)",
+            frame=[None, 0],
+            sort=[{"field": "set_order"}],
         )
     )
 
@@ -187,6 +206,19 @@ def UpSetAltair(
     # Matrix view
     matrix_view = (
         alt.layer(
+            # Background rectangles for alternating rows
+            base.mark_rect()
+            .transform_filter("datum.set_order % 2 == 1")
+            .encode(
+                x=alt.value(0),
+                x2=alt.value(matrix_width),
+                y=alt.Y(
+                    "set_order:N",
+                    axis=alt.Axis(grid=False, labels=False, ticks=False, domain=False),
+                    title=None,
+                ),
+                color=alt.value("#F7F7F7"),
+            ),
             # Background circles
             base.mark_circle(size=glyph_size, opacity=1).encode(
                 x=alt.X(
@@ -206,18 +238,9 @@ def UpSetAltair(
             base.mark_text(
                 align="right", baseline="middle", dx=-10, size=vertical_bar_label_size
             ).encode(
-                x=alt.value(0),  # Place at the start
+                x=alt.value(0),
                 y=alt.Y("set_order:N", title=None),
-                text="set_abbre:N",  # Use abbreviated names
-            ),
-            # Intersection circles
-            base.mark_circle(size=glyph_size)
-            .transform_filter("datum.is_intersect == 1")
-            .encode(
-                x=alt.X("intersection_id:N", sort=x_sort),
-                y="set_order:N",
-                color=brush_color,
-                tooltip=tooltip,
+                text="set_abbre:N",
             ),
             # Connection lines
             base.mark_rule(color="#E6E6E6", size=line_connection_size).encode(
@@ -233,10 +256,21 @@ def UpSetAltair(
                     alt.value(line_connection_size),
                     alt.value(0),
                 ),
+                opacity=alt.condition(opacity_selection, alt.value(1), alt.value(0.6)),
+            ),
+            # Intersection circles
+            base.mark_circle(size=glyph_size)
+            .transform_filter("datum.is_intersect == 1")
+            .encode(
+                x=alt.X("intersection_id:N", sort=x_sort),
+                y="set_order:N",
+                color=brush_color,
+                tooltip=tooltip,
+                opacity=alt.condition(opacity_selection, alt.value(1), alt.value(0.6)),
             ),
         )
         .properties(width=matrix_width, height=matrix_height)
-        .add_params(color_selection)
+        .add_params(color_selection, opacity_selection)
     )
 
     # Horizontal bar chart

@@ -88,8 +88,16 @@ def UpSetAltair(
     degree_calculation = "+".join([f"(isDefined(datum['{s}']) ? datum['{s}'] : 0)" for s in sets])
     
     # Selections
-    legend_selection = alt.Selection(type="multi", fields=["set"], bind="legend")
-    color_selection = alt.Selection(type="single", fields=["intersection_id"], on="mouseover")
+    legend_selection = alt.selection_interval(
+        name="legend",
+        bind="legend",
+        fields=["set"]
+    )
+    color_selection = alt.selection_single(
+        name="hover",
+        fields=["intersection_id"],
+        on="mouseover"
+    )
     
     # Styles
     vertical_bar_chart_height = height * height_ratio
@@ -100,7 +108,7 @@ def UpSetAltair(
     
     main_color = "#3A3A3A"
     brush_color = alt.condition(
-        ~color_selection,
+        "!hover.intersection_id || hover.intersection_id === datum.intersection_id",
         alt.value(main_color),
         alt.value(highlight_color)
     )
@@ -119,7 +127,7 @@ def UpSetAltair(
 
     # Base chart configuration
     base = alt.Chart(data).transform_filter(
-        legend_selection
+        "legend.set === null || legend.set === datum.set"
     ).transform_pivot(
         pivot="set",
         value="is_intersect",
@@ -240,7 +248,7 @@ def UpSetAltair(
         spacing=20
     ).resolve_scale(
         y='shared'
-    ).add_selection(
+    ).add_params(
         legend_selection
     )
 

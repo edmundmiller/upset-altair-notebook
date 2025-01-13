@@ -9,19 +9,32 @@ res = urlopen(
     "https://raw.githubusercontent.com/hodcroftlab/covariants/master/scripts/mutation_comparison.py"
 )
 
-# Remove assignment part
-json_str = res.read().decode().replace("mutation_comparison = ", "")
+# Read and decode the content
+content = res.read().decode()
 
-# Remove trailing comma
-json_str = re.sub(",[ \t\r\n]+}", "}", json_str)
-json_str = re.sub(",[ \t\r\n]+\]", "]", json_str)
+# Extract the JSON part (everything between the first { and last })
+json_str = re.search(r'\{.*\}', content, re.DOTALL).group()
 
-json_data = json.loads(json_str)
+# Clean up the JSON string
+# Remove Python-style comments
+json_str = re.sub(r'#.*$', '', json_str, flags=re.MULTILINE)
+# Ensure property names are double-quoted
+json_str = re.sub(r'(\w+):', r'"\1":', json_str)
+# Remove trailing commas
+json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+
+try:
+    json_data = json.loads(json_str)
+except json.JSONDecodeError as e:
+    print(f"JSON parsing error: {str(e)}")
+    print("First 500 characters of processed JSON:")
+    print(json_str[:500])
+    raise
 
 # Restructure and get unique mutations
-unique_mutations = set([])
+unique_mutations = set()
 for name in json_data:
-    mutations = json_data[name]["nonsynonymous"]
+    mutations = json_data[name]['nonsynonymous']
     json_data[name] = mutations
     unique_mutations.update(mutations)
 
@@ -40,6 +53,7 @@ for i, m in enumerate(unique_mutations):
 
 df = pd.DataFrame(data)
 
+# Rename columns to match variant names
 df = df.set_axis(
     [
         "Alpha",
@@ -59,7 +73,7 @@ df = df.set_axis(
 df = df.drop("-", axis=1)
 df
 
-UpSetAltair(
+chart = UpSetAltair(
     data=df.copy(),
     title="Shared Mutations of COVID Variants",
     subtitle=[
@@ -96,6 +110,7 @@ UpSetAltair(
     set_label_bg_size=650,
 )
 
+chart.save("covid_mutations_upset.html")
 
 UpSetAltair(
     data=df.copy(),

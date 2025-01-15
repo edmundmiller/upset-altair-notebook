@@ -77,7 +77,7 @@ def test_basic_symptoms_chart_by_degree(covid_symptoms_data, sort_by_degree_spec
 def test_custom_symptoms_chart(covid_symptoms_data, sort_by_freq_spec):
     """Test Example 2 with custom options"""
     custom_width = 900
-    custom_height = 500
+    custom_height = 300
     custom_colors = ["#F0E442", "#E69F00", "#D55E00", "#CC79A7", "#0072B2", "#56B4E9"]
 
     chart = UpSetAltair(

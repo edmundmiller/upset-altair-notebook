@@ -166,9 +166,6 @@ def create_matrix_view(
             tooltip=tooltip,
             opacity=alt.condition(opacity_selection, alt.value(1), alt.value(0.6)),
         ),
-    ).resolve_scale(
-        x='shared',
-        y='shared'
     ).properties(
         height=dimensions["matrix_height"],
         width=dimensions["matrix_width"]
@@ -225,9 +222,6 @@ def create_horizontal_bar_chart(
         )
     )
 
-    return alt.layer(horizontal_bar_labels, horizontal_bars).resolve_scale(
-        x='shared',
-        y='shared'
-    ).properties(
+    return alt.layer(horizontal_bar_labels, horizontal_bars).properties(
         width=horizontal_bar_chart_width
-    ) 
+    )

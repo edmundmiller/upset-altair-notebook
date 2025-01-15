@@ -5,19 +5,7 @@ import altair as alt
 def create_vertical_bar_chart(
     base, dimensions, color_selection, sort_by, sort_order, vertical_bar_label_size
 ):
-    """Create the vertical bar chart component.
-    
-    Args:
-        base (alt.Chart): Base chart with transformations
-        dimensions (dict): Chart dimensions
-        color_selection (alt.Selection): Color selection
-        sort_by (str): Sort method
-        sort_order (str): Sort order
-        vertical_bar_label_size (int): Label size
-    
-    Returns:
-        alt.Chart: Vertical bar chart component
-    """
+    """Create the vertical bar chart component."""
     main_color = "#3A3A3A"
     highlight_color = "#EA4667"
     brush_color = alt.condition(
@@ -52,8 +40,8 @@ def create_vertical_bar_chart(
             tooltip=tooltip,
         )
         .properties(
-            width=dimensions["matrix_width"],
-            height=dimensions["vertical_bar_chart_height"]
+            height=dimensions["vertical_bar_chart_height"],
+            width=dimensions["matrix_width"]
         )
     )
 
@@ -99,9 +87,20 @@ def create_matrix_view(
     # Create a filtered view for intersecting sets only
     intersection_base = base.transform_filter("datum.is_intersect == 1")
 
-    return alt.layer(
+    # Add aggregation for min and max set_order
+    intersection_base = intersection_base.transform_aggregate(
+        min_set_order='min(set_order)',
+        max_set_order='max(set_order)',
+        groupby=['intersection_id']
+    )
+
+    # Create a base chart with data
+    base_chart = alt.Chart(base.data)
+
+    # Create the layered chart
+    matrix_view = alt.layer(
         # Background rectangles for alternating rows
-        base.mark_rect()
+        base_chart.mark_rect()
         .transform_filter("datum.set_order % 2 == 1")
         .encode(
             x=alt.value(0),
@@ -114,7 +113,7 @@ def create_matrix_view(
             color=alt.value("#F7F7F7"),
         ),
         # Background circles
-        base.mark_circle(size=glyph_size, opacity=1).encode(
+        base_chart.mark_circle(size=glyph_size, opacity=1).encode(
             x=alt.X(
                 "intersection_id:N",
                 axis=alt.Axis(grid=False, labels=False, ticks=False, domain=False),
@@ -129,7 +128,7 @@ def create_matrix_view(
             color=alt.value("#E6E6E6"),
         ),
         # Set labels
-        base.mark_text(
+        base_chart.mark_text(
             align="right",
             baseline="middle",
             dx=-10,
@@ -140,28 +139,42 @@ def create_matrix_view(
             text="set_abbre:N",
         ),
         # Connection lines - only between intersecting dots
-        intersection_base.mark_rule(color="#E6E6E6", size=line_connection_size).encode(
+        base_chart.mark_rule(color="#E6E6E6", size=line_connection_size)
+        .transform_filter("datum.is_intersect == 1")
+        .transform_aggregate(
+            min_set_order='min(set_order)',
+            max_set_order='max(set_order)',
+            groupby=['intersection_id']
+        )
+        .encode(
             x=alt.X(
                 "intersection_id:N",
                 axis=alt.Axis(grid=False, labels=False, ticks=False),
                 sort=x_sort,
             ),
-            y=alt.Y("set_order:N", title=None),
-            detail="intersection_id:N",
+            y="min_set_order:Q",
+            y2="max_set_order:Q",
             opacity=alt.condition(opacity_selection, alt.value(1), alt.value(0.6)),
         ),
         # Intersection circles
-        intersection_base.mark_circle(size=glyph_size).encode(
+        base_chart.mark_circle(size=glyph_size)
+        .transform_filter("datum.is_intersect == 1")
+        .encode(
             x=alt.X("intersection_id:N", sort=x_sort),
             y="set_order:N",
             color=brush_color,
             tooltip=tooltip,
             opacity=alt.condition(opacity_selection, alt.value(1), alt.value(0.6)),
         ),
+    ).resolve_scale(
+        x='shared',
+        y='shared'
     ).properties(
-        width=dimensions["matrix_width"],
-        height=dimensions["matrix_height"]
+        height=dimensions["matrix_height"],
+        width=dimensions["matrix_width"]
     ).add_params(color_selection, opacity_selection)
+
+    return matrix_view
 
 
 def create_horizontal_bar_chart(
@@ -172,21 +185,12 @@ def create_horizontal_bar_chart(
     horizontal_bar_size,
     vertical_bar_label_size,
 ):
-    """Create the horizontal bar chart component.
-    
-    Args:
-        base (alt.Chart): Base chart with transformations
-        horizontal_bar_chart_width (int): Width of horizontal bar chart
-        color_range (list): Color range for sets
-        sets (list): List of set names
-        horizontal_bar_size (int): Size of horizontal bars
-        vertical_bar_label_size (int): Label size
-    
-    Returns:
-        alt.Chart: Horizontal bar chart component
-    """
+    """Create the horizontal bar chart component."""
+    # Create a base chart with data
+    base_chart = alt.Chart(base.data)
+
     horizontal_bars = (
-        base.mark_bar(size=horizontal_bar_size)
+        base_chart.mark_bar(size=horizontal_bar_size)
         .transform_filter("datum.is_intersect == 1")
         .encode(
             x=alt.X(
@@ -207,17 +211,23 @@ def create_horizontal_bar_chart(
         )
     )
 
-    horizontal_bar_labels = base.mark_text(
-        align="right",
-        baseline="middle",
-        dx=-10,
-        size=vertical_bar_label_size
-    ).encode(
-        x=alt.value(0),
-        y=alt.Y("set_order:N", title=None),
-        text="set_abbre:N",
+    horizontal_bar_labels = (
+        base_chart.mark_text(
+            align="right",
+            baseline="middle",
+            dx=-10,
+            size=vertical_bar_label_size
+        )
+        .encode(
+            x=alt.value(0),
+            y=alt.Y("set_order:N", title=None),
+            text="set_abbre:N",
+        )
     )
 
-    return alt.layer(horizontal_bar_labels, horizontal_bars).properties(
+    return alt.layer(horizontal_bar_labels, horizontal_bars).resolve_scale(
+        x='shared',
+        y='shared'
+    ).properties(
         width=horizontal_bar_chart_width
     ) 

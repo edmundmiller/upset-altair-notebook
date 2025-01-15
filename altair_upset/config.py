@@ -16,7 +16,7 @@ def configure_chart(chart, width, height, legend_orient="top-left", legend_symbo
         alt.Chart: Configured chart
     """
     return (
-        chart.configure_view(stroke=None, continuousWidth=width, continuousHeight=height)
+        chart.configure_view(stroke=None, continuousWidth=width)
         .configure_title(
             fontSize=20,
             fontWeight=500,

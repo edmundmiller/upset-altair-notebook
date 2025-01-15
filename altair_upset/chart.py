@@ -171,7 +171,6 @@ def UpSetAltair(
         )
         .resolve_scale(y="shared")
         .add_params(legend_selection)
-        .properties(autosize={"type": "fit", "contains": "padding"})
     )
 
     # Configure and return

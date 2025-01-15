@@ -14,7 +14,7 @@ def _():
 
 
 @app.cell
-def _(UpSetAltair, pd):
+def _(pd):
     # Create sample COVID variant data with more realistic intersections
     df = pd.DataFrame(
         {
@@ -25,7 +25,11 @@ def _(UpSetAltair, pd):
             "Omicron": [0, 0, 0, 1, 1, 1, 1, 1],  # 5 occurrences
         }
     )
+    return (df,)
 
+
+@app.cell
+def _(UpSetAltair, df):
     # Create visualization
     chart = UpSetAltair(
         data=df,
@@ -35,7 +39,13 @@ def _(UpSetAltair, pd):
             "Created with altair-upset",
         ],
         sets=["Alpha", "Beta", "Gamma", "Delta", "Omicron"],
-        abbre=["α", "β", "γ", "δ", "o"],  # Using Greek letters for better readability
+        abbre=[
+            "α",
+            "β",
+            "γ",
+            "δ",
+            "o",
+        ],  # Using Greek letters for better readability
         sort_by="frequency",
         sort_order="descending",  # Show largest intersections first
         width=800,  # Adjusted for better display
@@ -48,7 +58,7 @@ def _(UpSetAltair, pd):
             "#6a9f58",
         ],  # Color-blind friendly palette
     )
-    return chart, df
+    return (chart,)
 
 
 @app.cell

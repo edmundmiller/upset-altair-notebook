@@ -12,9 +12,8 @@ def load_test_data():
 
 def normalize_vega_json(json_str):
     """Normalize the Vega JSON for comparison by:
-    1. Removing schema URLs that may change with versions
-    2. Normalizing selector IDs that can vary
-    3. Normalizing whitespace and formatting
+    1. Normalizing selector IDs that can vary
+    2. Normalizing whitespace and formatting
     """
     # Parse and re-serialize to normalize formatting
     if isinstance(json_str, str):
@@ -22,10 +21,6 @@ def normalize_vega_json(json_str):
     else:
         json_data = json_str
         
-    # Remove schema URLs
-    if "$schema" in json_data:
-        json_data["$schema"] = "<removed>"
-    
     # Convert back to string with consistent formatting
     normalized = json.dumps(json_data, sort_keys=True, indent=2)
     
@@ -34,10 +29,10 @@ def normalize_vega_json(json_str):
     
     return normalized
 
-def save_vega_spec(chart, filename):
+def save_vega_spec(chart, filename, format='vega'):
     """Save the Vega specification for a chart"""
     with alt.data_transformers.enable(consolidate_datasets=False):
-        json_str = chart.to_json()
+        json_str = chart.to_json(format=format)
     
     # Normalize and save
     normalized = normalize_vega_json(json_str)
@@ -47,7 +42,7 @@ def save_vega_spec(chart, filename):
 def create_symptoms_by_degree_chart(data):
     """Create the symptoms chart sorted by degree"""
     # Configure Altair to match previous version
-    alt.themes.enable('default')
+    alt.theme.enable('default')
     
     chart = UpSetAltair(
         data=data,
@@ -78,7 +73,7 @@ def create_symptoms_by_degree_chart(data):
 def create_symptoms_by_frequency_chart(data):
     """Create the symptoms chart sorted by frequency"""
     # Configure Altair to match previous version
-    alt.themes.enable('default')
+    alt.theme.enable('default')
     
     chart = UpSetAltair(
         data=data,
@@ -119,17 +114,17 @@ def test_symptoms_by_degree_chart(update_snapshots=False):
         "Altair-based UpSet Plot: https://github.com/hms-dbmi/upset-altair-notebook",
     ]
     
-    # Generate actual spec
+    # Generate actual spec in Vega format
     with alt.data_transformers.enable(consolidate_datasets=False):
-        actual_json = chart.to_json()
+        actual_json = chart.to_json(format='vega')
     
     expected_path = Path("tests/test_data/vega/covid_symptoms_by_degree_vega.json")
     
     if update_snapshots:
-        save_vega_spec(chart, expected_path)
+        save_vega_spec(chart, expected_path, format='vega')
     else:
         if not expected_path.exists():
-            save_vega_spec(chart, expected_path)
+            save_vega_spec(chart, expected_path, format='vega')
             raise AssertionError(
                 f"Missing snapshot file {expected_path}. New snapshot has been created."
             )
@@ -154,17 +149,17 @@ def test_symptoms_by_frequency_chart(update_snapshots=False):
         "Altair-based UpSet Plot: https://github.com/hms-dbmi/upset-altair-notebook",
     ]
     
-    # Generate actual spec
+    # Generate actual spec in Vega format
     with alt.data_transformers.enable(consolidate_datasets=False):
-        actual_json = chart.to_json()
+        actual_json = chart.to_json(format='vega')
     
     expected_path = Path("tests/test_data/vega/covid_symptoms_by_frequency_vega.json")
     
     if update_snapshots:
-        save_vega_spec(chart, expected_path)
+        save_vega_spec(chart, expected_path, format='vega')
     else:
         if not expected_path.exists():
-            save_vega_spec(chart, expected_path)
+            save_vega_spec(chart, expected_path, format='vega')
             raise AssertionError(
                 f"Missing snapshot file {expected_path}. New snapshot has been created."
             )

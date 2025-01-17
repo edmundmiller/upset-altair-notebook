@@ -190,3 +190,50 @@ def test_configuration(sample_data):
     # Check other configurations
     assert spec["config"]["axis"]["labelFontSize"] == 14
     assert spec["config"]["legend"]["symbolType"] == "circle"
+
+
+def test_duplicate_width_signal():
+    """Test that the chart doesn't create duplicate width signals."""
+    data = {
+        'set': ['A', 'B', 'A&B'],
+        'value': [1, 1, 1],
+        'is_intersect': [0, 0, 1],
+        'set_order': [0, 1, 0],
+        'intersection_id': [0, 1, 2],
+        'set_abbre': ['A', 'B', 'AB']
+    }
+    df = pd.DataFrame(data)
+    
+    # Create the chart
+    chart = UpSetAltair(
+        data=df,
+        sets=["set"],
+    )
+    
+    # Convert to dict to inspect the spec
+    chart_dict = chart.to_dict()
+    
+    # Check for width properties in each component
+    def count_width_properties(obj):
+        width_props = []
+        if isinstance(obj, dict):
+            if 'width' in obj:
+                width_props.append(obj['width'])
+            for value in obj.values():
+                width_props.extend(count_width_properties(value))
+        elif isinstance(obj, list):
+            for item in obj:
+                width_props.extend(count_width_properties(item))
+        return width_props
+    
+    width_props = count_width_properties(chart_dict)
+    
+    # Each component (vertical bar, matrix, horizontal bar) should have exactly one width
+    # Plus potentially one global width
+    assert len(width_props) <= 4, f"Found too many width properties: {len(width_props)}"
+    
+    # Verify the chart can be rendered without error
+    try:
+        chart.to_dict()
+    except Exception as e:
+        pytest.fail(f"Chart rendering failed with error: {str(e)}")

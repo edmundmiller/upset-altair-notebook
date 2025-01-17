@@ -1,22 +1,25 @@
-"""Selection-related functions for UpSet plots."""
+"""Selection creation functions for UpSet plots."""
 import altair as alt
 
 
 def create_selections():
-    """Create the interactive selections for the UpSet plot.
+    """Create the selections used in the UpSet plot."""
+    legend_selection = alt.selection_point(
+        name="legend",
+        fields=["set"],
+        bind="legend"
+    )
     
-    Returns:
-        tuple: (legend_selection, color_selection, opacity_selection)
-    """
-    legend_selection = alt.selection_point(name="legend", bind="legend", fields=["set"])
-
     color_selection = alt.selection_point(
         name="hover",
         fields=["intersection_id"],
         on="mouseover",
-        empty=False,  # Keep previous selection when moving away
+        empty=False
     )
-
-    opacity_selection = alt.selection_point(name="opacity", fields=["intersection_id"])
-
+    
+    opacity_selection = alt.selection_point(
+        name="opacity",
+        fields=["intersection_id"]
+    )
+    
     return legend_selection, color_selection, opacity_selection 

@@ -49,7 +49,6 @@ def _():
             )
             .configure_concat(spacing=0)
         )
-
     return (upsetaltair_top_level_configuration,)
 
 
@@ -73,8 +72,22 @@ def _(UpSetAltair, df):
         sort_by="degree",
         sort_order="ascending",
     )
+    return
 
-    # Example 2
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+
+        # Example 2
+        """
+    )
+    return
+
+
+@app.cell
+def _(UpSetAltair, df):
     UpSetAltair(
         data=df.copy(),
         title="Symptoms Reported by Users of the COVID Symptom Tracker App",

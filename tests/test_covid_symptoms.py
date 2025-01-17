@@ -133,8 +133,21 @@ def test_symptoms_by_degree_chart(update_snapshots=False):
         with open(expected_path) as f:
             expected_json = f.read().strip()
         
-        assert normalize_vega_json(actual_json) == normalize_vega_json(expected_json), \
-            "Chart specification does not match snapshot. Run tests with --update-snapshots to update."
+        try:
+            assert normalize_vega_json(actual_json) == normalize_vega_json(expected_json), \
+                "Chart specification does not match snapshot. Run tests with --update-snapshots to update."
+        except AssertionError:
+            # Save failed spec for debugging
+            debug_dir = Path("tests/debug")
+            debug_dir.mkdir(exist_ok=True)
+            
+            actual_path = debug_dir / "failed_degree.vega.json"
+            with open(actual_path, 'w') as f:
+                f.write(normalize_vega_json(actual_json))
+                
+            print(f"\nSaved failed spec to: {actual_path}")
+            print(f"Expected spec at: {expected_path}")
+            raise
 
 def test_symptoms_by_frequency_chart(update_snapshots=False):
     # Create the chart
@@ -168,5 +181,18 @@ def test_symptoms_by_frequency_chart(update_snapshots=False):
         with open(expected_path) as f:
             expected_json = f.read().strip()
         
-        assert normalize_vega_json(actual_json) == normalize_vega_json(expected_json), \
-            "Chart specification does not match snapshot. Run tests with --update-snapshots to update."
+        try:
+            assert normalize_vega_json(actual_json) == normalize_vega_json(expected_json), \
+                "Chart specification does not match snapshot. Run tests with --update-snapshots to update."
+        except AssertionError:
+            # Save failed spec for debugging
+            debug_dir = Path("tests/debug")
+            debug_dir.mkdir(exist_ok=True)
+            
+            actual_path = debug_dir / "failed_frequency.vega.json"
+            with open(actual_path, 'w') as f:
+                f.write(normalize_vega_json(actual_json))
+                
+            print(f"\nSaved failed spec to: {actual_path}")
+            print(f"Expected spec at: {expected_path}")
+            raise

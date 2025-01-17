@@ -6,15 +6,17 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
-    import marimo as mo
+    import altair as alt
     import pandas as pd
     from altair_upset import UpSetAltair
-    return UpSetAltair, mo, pd
+    return UpSetAltair, alt, pd
 
 
 @app.cell
 def _(pd):
+    # Use the latest data from https://figshare.com/articles/covid_symptoms_table_csv/12148893
     df = pd.read_csv("https://ndownloader.figshare.com/files/22339791")
+
     df.head()
     return (df,)
 
@@ -53,8 +55,19 @@ def _():
 
 
 @app.cell
-def _(mo):
-    mo.md(r"""# Example 1""")
+def _(UpSetAltair, df):
+    UpSetAltair(
+        data=df.copy(),
+        title="Symptoms Reported by Users of the COVID Symptom Tracker App",
+        subtitle=[
+            "Story & Data: https://www.nature.com/articles/d41586-020-00154-w",
+            "Altair-based UpSet Plot: https://github.com/hms-dbmi/upset-altair-notebook",
+        ],
+        sets=["Shortness of Breath", "Diarrhea", "Fever", "Cough", "Anosmia", "Fatigue"],
+        abbre=["B", "D", "Fe", "C", "A", "Fa"],
+        sort_by="frequency",
+        sort_order="ascending",
+    )
     return
 
 
@@ -71,17 +84,6 @@ def _(UpSetAltair, df):
         abbre=["B", "D", "Fe", "C", "A", "Fa"],
         sort_by="degree",
         sort_order="ascending",
-    )
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-
-        # Example 2
-        """
     )
     return
 

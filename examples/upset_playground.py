@@ -32,7 +32,6 @@ def visualize_upset(data, sets, title="UpSet Plot", **kwargs):
         data=data,
         sets=sets,
         title=title,
-        subtitle=[""],
         **kwargs
     )
     return plot
@@ -47,11 +46,16 @@ if __name__ == "__main__":
         simple_data,
         simple_sets,
         title="Simple UpSet Plot Example",
+        subtitle=["Simple dataset example"],
         abbre=['A', 'B', 'C', 'D'],
         sort_by="frequency",
         sort_order="descending",
-        width=800,
-        height=500
+        width=600,
+        height=400,
+        height_ratio=0.6,
+        horizontal_bar_chart_width=150,
+        glyph_size=100,
+        set_label_bg_size=400
     )
     
     # Save the plot
@@ -73,11 +77,16 @@ if __name__ == "__main__":
         covid_data,
         covid_sets,
         title="COVID Symptoms UpSet Plot",
+        subtitle=["COVID-19 Symptoms Dataset Analysis"],
         abbre=['SoB', 'D', 'F', 'C', 'A', 'Fa'],
         sort_by="degree",
         sort_order="ascending",
-        width=1000,
-        height=600,
+        width=800,
+        height=500,
+        height_ratio=0.65,
+        horizontal_bar_chart_width=200,
+        glyph_size=100,
+        set_label_bg_size=650,
         color_range=["#55A8DB", "#3070B5", "#30363F", "#F1AD60", "#DF6234", "#BDC6CA"]
     )
     

@@ -43,5 +43,7 @@ def configure_chart(chart, width, height, legend_orient="top-left", legend_symbo
             symbolSize=legend_symbol_size,
         )
         .configure_concat(spacing=0)
-        .properties(autosize={"type": "fit", "contains": "padding"})
-    ) 
+        .properties(
+            background="white"
+        )
+    )

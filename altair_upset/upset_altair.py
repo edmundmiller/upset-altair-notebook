@@ -317,11 +317,11 @@ def visualize(
 
 # Top-level altair configuration
 def upsetaltair_top_level_configuration(
-    base,
+    upsetaltair,
     legend_orient="top-left",
     legend_symbol_size=30
 ):
-    return base.configure_view(
+    return upsetaltair.configure_view(
         stroke=None
     ).configure_title(
         fontSize=18,

@@ -71,7 +71,6 @@ def create_symptoms_by_degree_chart(data):
     # Apply specific configuration to match previous version
     chart = chart.configure(
         background="white",
-        autosize=None  # Disable autosize to match previous version
     )
     
     return chart
@@ -103,7 +102,6 @@ def create_symptoms_by_frequency_chart(data):
     # Apply specific configuration to match previous version
     chart = chart.configure(
         background="white",
-        autosize=None  # Disable autosize to match previous version
     )
     
     return chart

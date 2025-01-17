@@ -18,13 +18,7 @@ cd altair-upset
 
 2. Create a virtual environment and install dependencies:
 ```bash
-uv venv
 uv install -e ".[dev]"
-```
-
-3. Start Jupyter for development:
-```bash
-uv run jupyter lab
 ```
 
 ## Testing
@@ -63,3 +57,11 @@ chart = au.UpSetAltair(
 # Display the chart
 chart.show()
 ```
+
+## Credits
+
+The original notebook is available at: https://github.com/hms-dbmi/upset-altair-notebook
+
+If you use an UpSet figure in a publication, please cite the original paper:
+
+Alexander Lex, Nils Gehlenborg, Hendrik Strobelt, Romain Vuillemot, Hanspeter Pfister. UpSet: Visualization of Intersecting Sets IEEE Transactions on Visualization and Computer Graphics (InfoVis), 20(12): 1983--1992, doi:10.1109/TVCG.2014.2346248, 2014.

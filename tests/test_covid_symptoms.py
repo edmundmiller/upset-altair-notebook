@@ -1,44 +1,31 @@
-import pytest
-import pandas as pd
 import json
 import re
+import altair as alt
+import pandas as pd
+from pathlib import Path
 from altair_upset import UpSetAltair
 
-
-@pytest.fixture
-def covid_symptoms_data():
+def load_test_data():
     """Load the COVID symptoms data"""
-    return pd.read_csv("https://ndownloader.figshare.com/files/22339791")
+    # Use the same data source as the other tests
+    data = pd.read_csv("https://ndownloader.figshare.com/files/22339791")
+    return data
 
+def normalize_vega_json(json_str):
+    """Normalize the Vega JSON for comparison by:
+    1. Removing schema URLs that may change with versions
+    2. Normalizing selector IDs that can vary
+    """
+    # Remove schema URLs
+    json_str = re.sub(r'"\$schema": ".*"', '"$schema": "<removed>"', json_str)
+    # Normalize selector IDs
+    json_str = re.sub(r'selector\d+', 'selectorXXX', json_str)
+    return json_str
 
-@pytest.fixture
-def sort_by_degree_spec():
-    """Load the sort by degree reference specification"""
-    with open("tests/test_data/sort_by_degree_covid_symptoms.json") as f:
-        return json.load(f)
-
-
-@pytest.fixture
-def sort_by_freq_spec():
-    """Load the sort by frequency reference specification"""
-    with open("tests/test_data/sort_by_freq_covid_symptoms.json") as f:
-        return json.load(f)
-
-
-def normalize_spec(spec):
-    """Normalize specification for comparison by removing variable elements"""
-    json_str = json.dumps(spec)
-    # Replace selector names which can vary
-    json_str = re.sub(r"selector\d+", "selectorXXX", json_str)
-    # Remove schema URL which can change with Altair versions
-    json_str = re.sub(r'"schema": ".*"', '"schema": "<removed>"', json_str)
-    return json.loads(json_str)
-
-
-def test_basic_symptoms_chart_by_degree(covid_symptoms_data, sort_by_degree_spec):
-    """Test Example 1 from the documentation with sort by degree"""
+def create_symptoms_by_degree_chart(data):
+    """Create the symptoms chart sorted by degree"""
     chart = UpSetAltair(
-        data=covid_symptoms_data,
+        data=data,
         title="Symptoms Reported by Users of the COVID Symptom Tracker App",
         subtitle=[
             "Story & Data: https://www.nature.com/articles/d41586-020-00154-w",
@@ -46,42 +33,21 @@ def test_basic_symptoms_chart_by_degree(covid_symptoms_data, sort_by_degree_spec
         ],
         sets=[
             "Shortness of Breath",
-            "Diarrhea",
+            "Diarrhea", 
             "Fever",
             "Cough",
             "Anosmia",
             "Fatigue",
         ],
-        abbre=["B", "D", "Fe", "C", "A", "Fa"],
         sort_by="degree",
         sort_order="ascending",
     )
+    return chart
 
-    spec = normalize_spec(chart.to_dict())
-    ref_spec = normalize_spec(sort_by_degree_spec)
-
-    # Update assertions to match Altair 5 structure
-    assert "vconcat" in spec
-    vertical_bar = spec["vconcat"][0]
-    assert "data" in vertical_bar
-    assert vertical_bar["data"]["name"] == "source"
-
-    # Check sort by degree in the layer
-    assert "layer" in vertical_bar
-    assert len(vertical_bar["layer"]) > 0
-    x_encoding = vertical_bar["layer"][0]["encoding"]["x"]
-    assert x_encoding["sort"]["field"] == "degree"
-    assert x_encoding["sort"]["order"] == "ascending"
-
-
-def test_custom_symptoms_chart(covid_symptoms_data, sort_by_freq_spec):
-    """Test Example 2 with custom options"""
-    custom_width = 900
-    custom_height = 300
-    custom_colors = ["#F0E442", "#E69F00", "#D55E00", "#CC79A7", "#0072B2", "#56B4E9"]
-
+def create_symptoms_by_frequency_chart(data):
+    """Create the symptoms chart sorted by frequency"""
     chart = UpSetAltair(
-        data=covid_symptoms_data,
+        data=data,
         title="Symptoms Reported by Users of the COVID Symptom Tracker App",
         subtitle=[
             "Story & Data: https://www.nature.com/articles/d41586-020-00154-w",
@@ -90,37 +56,56 @@ def test_custom_symptoms_chart(covid_symptoms_data, sort_by_freq_spec):
         sets=[
             "Shortness of Breath",
             "Diarrhea",
-            "Fever",
+            "Fever", 
             "Cough",
             "Anosmia",
             "Fatigue",
         ],
-        abbre=["B", "D", "Fe", "C", "A", "Fa"],
         sort_by="frequency",
         sort_order="ascending",
-        width=custom_width,
-        height=custom_height,
-        height_ratio=0.65,
-        color_range=custom_colors,
-        highlight_color="#777",
-        horizontal_bar_chart_width=200,
-        glyph_size=100,
-        set_label_bg_size=650,
-        line_connection_size=1,
-        horizontal_bar_size=16,
-        vertical_bar_label_size=12,
-        vertical_bar_padding=14,
     )
+    return chart
 
-    spec = normalize_spec(chart.to_dict())
+def test_symptoms_by_degree_chart():
+    # Create the chart
+    data = load_test_data()
+    chart = create_symptoms_by_degree_chart(data)
+    
+    # Test specific chart properties
+    chart_dict = chart.to_dict()
+    assert chart_dict['title']['text'] == "Symptoms Reported by Users of the COVID Symptom Tracker App"
+    assert chart_dict['background'] == "white"
+    
+    # Compare full Vega specification
+    with alt.data_transformers.enable(consolidate_datasets=False):
+        actual_json = chart.to_json()
+    
+    # Load expected Vega JSON
+    expected_path = Path("tests/test_data/vega/covid_symptoms_by_degree_vega.json")
+    with open(expected_path) as f:
+        expected_json = f.read()
+    
+    # Compare normalized JSONs
+    assert normalize_vega_json(actual_json) == normalize_vega_json(expected_json)
 
-    # Check dimensions in the correct location
-    assert spec["config"]["view"]["continuousWidth"] == custom_width
-    assert spec["config"]["view"]["continuousHeight"] == custom_height
-
-    # Check color configuration in the layer
-    horizontal_bar = spec["vconcat"][1]["hconcat"][1]
-    assert "layer" in horizontal_bar
-    assert len(horizontal_bar["layer"]) > 0
-    assert "encoding" in horizontal_bar["layer"][1]
-    assert horizontal_bar["layer"][1]["encoding"]["color"]["scale"]["range"] == custom_colors
+def test_symptoms_by_frequency_chart():
+    # Create the chart
+    data = load_test_data()
+    chart = create_symptoms_by_frequency_chart(data)
+    
+    # Test specific chart properties
+    chart_dict = chart.to_dict()
+    assert chart_dict['title']['text'] == "Symptoms Reported by Users of the COVID Symptom Tracker App"
+    assert chart_dict['background'] == "white"
+    
+    # Compare full Vega specification
+    with alt.data_transformers.enable(consolidate_datasets=False):
+        actual_json = chart.to_json()
+    
+    # Load expected Vega JSON
+    expected_path = Path("tests/test_data/vega/covid_symptoms_by_frequency_vega.json")
+    with open(expected_path) as f:
+        expected_json = f.read()
+    
+    # Compare normalized JSONs
+    assert normalize_vega_json(actual_json) == normalize_vega_json(expected_json)

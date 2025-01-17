@@ -9,7 +9,7 @@ def create_vertical_bar_chart(
     main_color = "#3A3A3A"
     highlight_color = "#EA4667"
     brush_color = alt.condition(
-        color_selection, alt.value(main_color), alt.value(highlight_color)
+        ~color_selection, alt.value(main_color), alt.value(highlight_color)
     )
 
     x_sort = alt.Sort(
@@ -40,8 +40,7 @@ def create_vertical_bar_chart(
             tooltip=tooltip,
         )
         .properties(
-            height=dimensions["vertical_bar_chart_height"],
-            width=dimensions["matrix_width"]
+            height=dimensions["vertical_bar_chart_height"]
         )
     )
 
@@ -71,7 +70,7 @@ def create_matrix_view(
     main_color = "#3A3A3A"
     highlight_color = "#EA4667"
     brush_color = alt.condition(
-        color_selection, alt.value(main_color), alt.value(highlight_color)
+        ~color_selection, alt.value(main_color), alt.value(highlight_color)
     )
 
     x_sort = alt.Sort(
@@ -84,25 +83,15 @@ def create_matrix_view(
         alt.Tooltip("degree:Q", title="Degree"),
     ]
 
-    # Create a filtered view for intersecting sets only
-    intersection_base = base.transform_filter("datum.is_intersect == 1")
-
-    # Add aggregation for min and max set_order
-    intersection_base = intersection_base.transform_aggregate(
-        min_set_order='min(set_order)',
-        max_set_order='max(set_order)',
-        groupby=['intersection_id']
+    base_chart = base.properties(
+        height=dimensions["matrix_height"]
     )
 
-    # Create a base chart with data
-    base_chart = alt.Chart(base.data)
-
-    # Create the layered chart
     matrix_view = alt.layer(
         # Background rectangles for alternating rows
-        base_chart.mark_rect()
-        .transform_filter("datum.set_order % 2 == 1")
-        .encode(
+        base_chart.mark_rect().transform_filter(
+            alt.datum["set_order"] % 2 == 1
+        ).encode(
             x=alt.value(0),
             x2=alt.value(dimensions["matrix_width"]),
             y=alt.Y(
@@ -166,9 +155,6 @@ def create_matrix_view(
             tooltip=tooltip,
             opacity=alt.condition(opacity_selection, alt.value(1), alt.value(0.6)),
         ),
-    ).properties(
-        height=dimensions["matrix_height"],
-        width=dimensions["matrix_width"]
     ).add_params(color_selection, opacity_selection)
 
     return matrix_view
@@ -176,52 +162,55 @@ def create_matrix_view(
 
 def create_horizontal_bar_chart(
     base,
-    horizontal_bar_chart_width,
+    width,
     color_range,
     sets,
     horizontal_bar_size,
     vertical_bar_label_size,
 ):
     """Create the horizontal bar chart component."""
-    # Create a base chart with data
-    base_chart = alt.Chart(base.data)
+    is_show_horizontal_bar_label_bg = len(sets[0]) <= 2
+    horizontal_bar_label_bg_color = "white" if is_show_horizontal_bar_label_bg else "black"
 
-    horizontal_bars = (
-        base_chart.mark_bar(size=horizontal_bar_size)
-        .transform_filter("datum.is_intersect == 1")
-        .encode(
-            x=alt.X(
-                "sum(count):Q",
-                axis=alt.Axis(grid=False, tickCount=3),
-                title="Set Size",
-            ),
-            y=alt.Y(
-                "set_order:N",
-                axis=alt.Axis(grid=False, labels=False, ticks=False, domain=False),
-                title=None,
-            ),
-            color=alt.Color(
-                "set:N",
-                scale=alt.Scale(domain=sets, range=color_range),
-                legend=None,
-            ),
+    base_chart = base.properties(width=width)
+
+    horizontal_bar_label_bg = base_chart.mark_circle(size=vertical_bar_label_size * 2).encode(
+        y=alt.Y(
+            "set_order:N",
+            axis=alt.Axis(grid=False, labels=False, ticks=False, domain=False),
+            title=None,
+        ),
+        color=alt.Color(
+            "set:N",
+            scale=alt.Scale(domain=sets, range=color_range),
+            title=None
+        ),
+        opacity=alt.value(1)
+    )
+
+    horizontal_bar_label = horizontal_bar_label_bg.mark_text(
+        align="center"
+    ).encode(
+        text=alt.Text("set_abbre:N"),
+        color=alt.value(horizontal_bar_label_bg_color)
+    )
+
+    horizontal_bar = horizontal_bar_label_bg.mark_bar(
+        size=horizontal_bar_size
+    ).transform_filter(
+        alt.datum["is_intersect"] == 1
+    ).encode(
+        x=alt.X(
+            "sum(count):Q",
+            axis=alt.Axis(grid=False, tickCount=3),
+            title="Set Size"
         )
     )
 
-    horizontal_bar_labels = (
-        base_chart.mark_text(
-            align="right",
-            baseline="middle",
-            dx=-10,
-            size=vertical_bar_label_size
-        )
-        .encode(
-            x=alt.value(0),
-            y=alt.Y("set_order:N", title=None),
-            text="set_abbre:N",
-        )
-    )
+    # Create layers based on whether we show the background or not
+    layers = []
+    if is_show_horizontal_bar_label_bg:
+        layers.append(horizontal_bar_label_bg)
+    layers.extend([horizontal_bar_label, horizontal_bar])
 
-    return alt.layer(horizontal_bar_labels, horizontal_bars).properties(
-        width=horizontal_bar_chart_width
-    )
+    return alt.layer(*layers)

@@ -63,9 +63,30 @@ def create_symptoms_by_degree_chart(data):
         sort_order="ascending",
     )
     
-    # Apply specific configuration to match previous version
-    chart = chart.configure(
-        background="white",
+    # Apply specific configuration to match expected spec
+    chart = chart.configure_view(
+        stroke=None
+    ).configure_axis(
+        labelFontSize=14,
+        labelFontWeight=300,
+        titleFontSize=16,
+        titleFontWeight=400,
+        titlePadding=10
+    ).configure_legend(
+        labelFontSize=14,
+        labelFontWeight=300,
+        titleFontSize=16,
+        titleFontWeight=400,
+        padding=20,
+        orient="top",
+        symbolType="circle",
+        symbolSize=325
+    ).configure_title(
+        fontSize=18,
+        fontWeight=400,
+        subtitlePadding=10
+    ).configure(
+        background="white"
     )
     
     return chart
@@ -94,9 +115,30 @@ def create_symptoms_by_frequency_chart(data):
         sort_order="ascending",
     )
     
-    # Apply specific configuration to match previous version
-    chart = chart.configure(
-        background="white",
+    # Apply specific configuration to match expected spec
+    chart = chart.configure_view(
+        stroke=None
+    ).configure_axis(
+        labelFontSize=14,
+        labelFontWeight=300,
+        titleFontSize=16,
+        titleFontWeight=400,
+        titlePadding=10
+    ).configure_legend(
+        labelFontSize=14,
+        labelFontWeight=300,
+        titleFontSize=16,
+        titleFontWeight=400,
+        padding=20,
+        orient="top",
+        symbolType="circle",
+        symbolSize=325
+    ).configure_title(
+        fontSize=18,
+        fontWeight=400,
+        subtitlePadding=10
+    ).configure(
+        background="white"
     )
     
     return chart

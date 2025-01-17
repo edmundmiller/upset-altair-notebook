@@ -48,8 +48,8 @@ def UpSetAltair(
         abbre (list): Abbreviated set names.
         sort_by (str): "frequency" or "degree"
         sort_order (str): "ascending" or "descending"
-        width (int): Vertical size of the UpSet plot.
-        height (int): Horizontal size of the UpSet plot.
+        width (int): Total width of the UpSet plot.
+        height (int): Total height of the UpSet plot.
         height_ratio (float): Ratio of height between upper and under views, ranges from 0 to 1.
         horizontal_bar_chart_width (int): Width of horizontal bar chart on the bottom-right.
         color_range (list): Color to encode sets.
@@ -126,13 +126,14 @@ def UpSetAltair(
     )
 
     # Calculate dimensions
+    matrix_width = width - horizontal_bar_chart_width
     dimensions = {
         "vertical_bar_chart_height": height * height_ratio,
         "matrix_height": height - (height * height_ratio),
-        "matrix_width": width - horizontal_bar_chart_width,
+        "matrix_width": matrix_width,
         "vertical_bar_size": min(
             30,
-            width / len(processed_data["data"]["intersection_id"].unique()) - vertical_bar_padding,
+            matrix_width / len(processed_data["data"]["intersection_id"].unique()) - vertical_bar_padding,
         ),
     }
 
@@ -162,16 +163,12 @@ def UpSetAltair(
         vertical_bar_label_size,
     )
 
-    # Compose final chart
-    chart = (
-        alt.vconcat(
-            vertical_bar_chart,
-            alt.hconcat(matrix_view, horizontal_bar_chart),
-            spacing=20,
-        )
-        .resolve_scale(y="shared")
-        .add_params(legend_selection)
-    )
+    # Compose final chart with explicit width signals
+    chart = alt.vconcat(
+        vertical_bar_chart,
+        alt.hconcat(matrix_view, horizontal_bar_chart, spacing=20),
+        spacing=20,
+    ).resolve_scale(y="shared")
 
     # Configure and return
     chart = configure_chart(chart, width, height)
@@ -182,4 +179,4 @@ def UpSetAltair(
             )
         )
 
-    return chart 
+    return chart.add_params(legend_selection) 

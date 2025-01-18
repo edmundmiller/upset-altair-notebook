@@ -11,3 +11,6 @@ htmlcov
 /.ipynb_checkpoints/
 /.coverage
 tests/debug/
+# pixi environments
+.pixi
+*.egg-info

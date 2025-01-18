@@ -1,0 +1,21 @@
+[project]
+authors = ["Edmund Miller <edmund.miller@seqera.io>"]
+channels = ["conda-forge", "bioconda"]
+description = "Add a short description here"
+name = "upset-altair-env"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = ">=3.7"
+jupyter = "*"
+nb_conda = "*"
+pandas = "*"
+requests = "*"
+numpy = "*"
+altair = "4.0.0.*"
+jsonschema = "<=4.0"
+altair_saver = "*"
+vega_datasets = "*"

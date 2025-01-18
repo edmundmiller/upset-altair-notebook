@@ -22,6 +22,7 @@ altair_saver = "*"
 vega_datasets = "*"
 selenium = "<=4.2"
 pytest = "*"
+nodejs = "18.*"
 
 [pypi-dependencies]
 altair_upset = { path = ".", editable = true }

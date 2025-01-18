@@ -7,6 +7,7 @@ platforms = ["osx-arm64"]
 version = "0.1.0"
 
 [tasks]
+reproduce = "pytest tests/test_covid_symptoms.py"
 
 [dependencies]
 python = ">=3.7"
